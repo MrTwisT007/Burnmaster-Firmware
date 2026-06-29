@@ -82,7 +82,7 @@ int getSystick()
 }
 
 void delay(int n) {
-  // Wait for N ticks. This will not guarantee an accurate delay since this does not restart the SysTick timer
+  // Wait for N ticks. Restarts the timer for more accurate delay
   unsigned endTicks = ticks + n;
   SysTick->CTRL = ~SysTick_CTRL_CLKSOURCE_Msk | SysTick_CTRL_TICKINT_Msk | SysTick_CTRL_ENABLE_Msk;
   SysTick->CTRL = SysTick_CTRL_CLKSOURCE_Msk | SysTick_CTRL_TICKINT_Msk | SysTick_CTRL_ENABLE_Msk;

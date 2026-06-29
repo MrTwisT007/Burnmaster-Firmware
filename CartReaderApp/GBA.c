@@ -119,7 +119,7 @@ word readWord_GBA(unsigned long Address)
   //GPIO_OCTL(ADDR_2) = (GPIO_OCTL(ADDR_2)&0xFFFFF0FF);
   setAddrInMode();
 
-  // Pull RD(PH6) to LOW
+  // Pull RD to LOW
   gpio_bit_reset(CTRLGBA,GBA_RD);
 
   // Delay here or read error with repro
@@ -131,7 +131,7 @@ word readWord_GBA(unsigned long Address)
   myWord = ((myWord << 8) + (myWord >> 8))&0xF0FF;
   myWord += (GPIO_ISTAT(ADDR_2)&0x0F00);
 
-  // Switch RD(PH6) to HIGH
+  // Switch RD to HIGH
   gpio_bit_set(CTRLGBA,GBA_RD|CS_ROM);
 
   return myWord;
@@ -150,7 +150,7 @@ word readWord_buf_GBA(unsigned long Address, uint16_t *outBuf, uint16_t cnt)
   // Output address to address pins,
   setAddr(myAddress, true);
 
-  // Pull CS(PH3) to LOW
+  // Pull CS to LOW
   gpio_bit_reset(CTRLGBA,CS_ROM);
 
   delay_GBA();
@@ -164,7 +164,7 @@ word readWord_buf_GBA(unsigned long Address, uint16_t *outBuf, uint16_t cnt)
 
   for(WORD i = 0;i<cnt;i++)
   {
-    // Pull RD(PH6) to LOW
+    // Pull RD to LOW
     gpio_bit_reset(CTRLGBA,GBA_RD);
 
     // Delay here or read error with repro
@@ -175,7 +175,7 @@ word readWord_buf_GBA(unsigned long Address, uint16_t *outBuf, uint16_t cnt)
     myWord = ((myWord << 8) + (myWord >> 8))&0xF0FF;
     myWord += (GPIO_ISTAT(ADDR_2)&0x0F00);
 
-    // Switch RD(PH6) to HIGH
+    // Switch RD to HIGH
     gpio_bit_set(CTRLGBA,GBA_RD);
 
     outBuf[i] = myWord;
@@ -198,7 +198,7 @@ void writeWord_GBA(unsigned long Address, word myWord)
   // Output address to address pins,
   setAddr(myAddress, true);
 
-  // Pull CS(PH3) to LOW
+  // Pull CS to LOW
   gpio_bit_reset(CTRLGBA,CS_ROM);
 
   delay_GBA();
@@ -214,7 +214,7 @@ void writeWord_GBA(unsigned long Address, word myWord)
   GPIO_OCTL(ADDR_1) = (GPIO_OCTL(ADDR_1)&0xF) + (((myWord << 8) + (myWord >> 8)) & 0xFFF0);
   GPIO_OCTL(ADDR_2) = (GPIO_OCTL(ADDR_2)&0xF0FF) + (myWord&0x0F00);
 
-  // Pull WR(PH5) to LOW
+  // Pull WR to LOW
   gpio_bit_reset(CTRLGBA,GBA_WR);
 
   delay_GBA();
@@ -222,10 +222,10 @@ void writeWord_GBA(unsigned long Address, word myWord)
   delay_GBA();  
   delay_GBA();
 
-  // Switch WR(PH5) to HIGH
+  // Switch WR to HIGH
   gpio_bit_set(CTRLGBA,GBA_WR);
 
-  // Switch CS_ROM(PH3) to HIGH
+  // Switch CS_ROM to HIGH
   delay_GBA();
   gpio_bit_set(CTRLGBA,CS_ROM);
 }
@@ -279,8 +279,8 @@ byte readByte_GBA(unsigned long myAddress)
   // Output address to address pins,
   setAddr(myAddress, false);
 
-  // Pull OE_SRAM(PH6) to LOW
-  // Pull CE_SRAM(PH0) to LOW
+  // Pull OE_SRAM to LOW
+  // Pull CE_SRAM to LOW
   gpio_bit_reset(CTRLGBA,CS_SRAM|GBA_RD);
 
   // Hold address for at least 25ns and wait 150ns before access
@@ -290,8 +290,8 @@ byte readByte_GBA(unsigned long myAddress)
   // Read byte
   byte tempByte = GPIO_ISTAT(ADDR_3)>>8;
 
-  // Pull CE_SRAM(PH0) HIGH
-  // Pull OE_SRAM(PH6) HIGH
+  // Pull CE_SRAM HIGH
+  // Pull OE_SRAM HIGH
   gpio_bit_set(CTRLGBA,GBA_RD|CS_SRAM);
   return tempByte;
 }
@@ -1169,7 +1169,7 @@ void writeByteFlash_GBA(unsigned long myAddress, byte myData)
   delay_GBA();
   delay_GBA();
 
-  // Switch WE_FLASH(PH5) to LOW
+  // Switch WE_FLASH to LOW
   gpio_bit_reset(CTRLGBA,GBA_WR);
 
   // Leave WE low for at least 40ns
@@ -1177,7 +1177,7 @@ void writeByteFlash_GBA(unsigned long myAddress, byte myData)
   delay_GBA();
   delay_GBA();
 
-  // Switch WE_FLASH(PH5) to HIGH
+  // Switch WE_FLASH to HIGH
   gpio_bit_set(CTRLGBA,GBA_WR);
 
   // Leave WE high for a bit
@@ -1188,7 +1188,7 @@ void writeByteFlash_GBA(unsigned long myAddress, byte myData)
 // Erase FLASH
 void eraseFLASH_GBA() 
 {
-  // Output a HIGH signal on CS_ROM(PH3) WE_FLASH(PH5) and OE_FLASH(PH6)
+  // Output a HIGH signal on CS_ROM WE_FLASH and OE_FLASH
   gpio_bit_set(CTRLGBA,GBA_RD|GBA_WR|CS_ROM);
 
   // Set address ports to output
@@ -1196,7 +1196,7 @@ void eraseFLASH_GBA()
   setAddrOutMode();
   setDataOutMode();
 
-  // Output a LOW signal on CE_FLASH(PH0)
+  // Output a LOW signal on CE_FLASH
   gpio_bit_reset(CTRLGBA,CS_SRAM);
 
   // Erase command sequence
@@ -1207,7 +1207,7 @@ void eraseFLASH_GBA()
   writeByteFlash_GBA(0x2aaa, 0x55);
   writeByteFlash_GBA(0x5555, 0x10);
 
-  // Set CS_FLASH(PH0) high
+  // Set CS_FLASH high
   gpio_bit_set(CTRLGBA,CS_SRAM);
 
   // Wait until all is erased
@@ -1217,7 +1217,7 @@ void eraseFLASH_GBA()
 
 void idFlash_GBA() 
 {
-  // Output a HIGH signal on CS_ROM(PH3) WE_FLASH(PH5) and OE_FLASH(PH6)
+  // Output a HIGH signal on CS_ROM WE_FLASH and OE_FLASH
   gpio_bit_set(CTRLGBA,GBA_RD|GBA_WR|CS_ROM);
 
   // Set address ports to output
@@ -1225,7 +1225,7 @@ void idFlash_GBA()
   setAddrOutMode();
   setDataOutMode();
 
-  // Output a LOW signal on CE_FLASH(PH0)
+  // Output a LOW signal on CE_FLASH
   gpio_bit_reset(CTRLGBA,CS_SRAM);
 
   // ID command sequence
@@ -1236,7 +1236,7 @@ void idFlash_GBA()
   // Set data pins to input
   setDataInMode();
 
-  // Output a LOW signal on OE_FLASH(PH6)
+  // Output a LOW signal on OE_FLASH
   gpio_bit_reset(CTRLGBA,GBA_RD);
 
   // Wait 150ns before reading ID
@@ -1250,14 +1250,14 @@ void idFlash_GBA()
   byte bid1 = readByteFlash_GBA(1); 
   sprintf(flashid, "%02X%02X", bid0,bid1);
 
-  // Set CS_FLASH(PH0) high
+  // Set CS_FLASH high
   gpio_bit_set(CTRLGBA,CS_SRAM);
 }
 
 // Reset FLASH
 void resetFLASH_GBA() 
 {
-  // Output a HIGH signal on CS_ROM(PH3) WE_FLASH(PH5) and OE_FLASH(PH6)
+  // Output a HIGH signal on CS_ROM WE_FLASH and OE_FLASH
   gpio_bit_set(CTRLGBA,GBA_RD|GBA_WR|CS_ROM);
 
   // Set address ports to output
@@ -1265,7 +1265,7 @@ void resetFLASH_GBA()
   setAddrOutMode();
   setDataOutMode();
 
-  // Output a LOW signal on CE_FLASH(PH0)
+  // Output a LOW signal on CE_FLASH
   gpio_bit_reset(CTRLGBA,CS_SRAM);
 
   // Reset command sequence
@@ -1274,7 +1274,7 @@ void resetFLASH_GBA()
   writeByteFlash_GBA(0x5555, 0xf0);
   writeByteFlash_GBA(0x5555, 0xf0);
 
-  // Set CS_FLASH(PH0) high
+  // Set CS_FLASH high
   gpio_bit_set(CTRLGBA,CS_SRAM);
 
   // Wait
@@ -1283,7 +1283,7 @@ void resetFLASH_GBA()
 
 boolean blankcheckFLASH_GBA (unsigned long flashSize) 
 {
-  // Output a HIGH signal on CS_ROM(PH3) WE_FLASH(PH5)
+  // Output a HIGH signal on CS_ROM WE_FLASH
   gpio_bit_set(CTRLGBA,GBA_WR|CS_ROM);
 
   // Set address ports to output
@@ -1298,10 +1298,10 @@ boolean blankcheckFLASH_GBA (unsigned long flashSize)
 
   boolean blank = 1;
 
-  // Output a LOW signal on  CE_FLASH(PH0)
+  // Output a LOW signal on  CE_FLASH
   gpio_bit_reset(CTRLGBA,CS_SRAM);
 
-  // Output a LOW signal on OE_FLASH(PH6)
+  // Output a LOW signal on OE_FLASH
   gpio_bit_reset(CTRLGBA,GBA_RD);
 
   for (unsigned long currAddress = 0; currAddress < flashSize; currAddress += 512) {
@@ -1321,7 +1321,7 @@ boolean blankcheckFLASH_GBA (unsigned long flashSize)
 
     LED_GREEN_BLINK;
   }
-  // Set CS_FLASH(PH0) high
+  // Set CS_FLASH high
   gpio_bit_set(CTRLGBA,CS_SRAM);
 
   return blank;
@@ -1332,7 +1332,7 @@ boolean blankcheckFLASH_GBA (unsigned long flashSize)
 // therefore the bank size is 65536 bytes, so we have two banks in total
 void switchBank_GBA(byte bankNum) 
 {
-  // Output a HIGH signal on CS_ROM(PH3) WE_FLASH(PH5) and OE_FLASH(PH6)
+  // Output a HIGH signal on CS_ROM WE_FLASH and OE_FLASH
   gpio_bit_set(CTRLGBA,GBA_RD|GBA_WR|CS_ROM);
 
   // Set address ports to output
@@ -1340,7 +1340,7 @@ void switchBank_GBA(byte bankNum)
   setAddrOutMode();
   setDataOutMode();
 
-  // Output a LOW signal on CE_FLASH(PH0)
+  // Output a LOW signal on CE_FLASH
   gpio_bit_reset(CTRLGBA,CS_SRAM);
 
   // Switch bank command sequence
@@ -1349,13 +1349,13 @@ void switchBank_GBA(byte bankNum)
   writeByte_GBA(0x5555, 0xB0);
   writeByte_GBA(0x0000, bankNum);
 
-  // Set CS_FLASH(PH0) high
+  // Set CS_FLASH high
   gpio_bit_set(CTRLGBA,CS_SRAM);
 }
 
 void readFLASH_GBA (boolean browseFile, unsigned long flashSize, uint32_t pos)
 {
-  // Output a HIGH signal on CS_ROM(PH3) WE_FLASH(PH5)
+  // Output a HIGH signal on CS_ROM WE_FLASH
   gpio_bit_set(CTRLGBA,GBA_WR|CS_ROM);
 
   // Set address ports to output
@@ -1400,10 +1400,10 @@ void readFLASH_GBA (boolean browseFile, unsigned long flashSize, uint32_t pos)
   if (pos != 0)
     f_lseek(&tf, pos);
 
-  // Output a LOW signal on CE_FLASH(PH0)
+  // Output a LOW signal on CE_FLASH
   gpio_bit_reset(CTRLGBA,CS_SRAM);
 
-  // Output a LOW signal on OE_FLASH(PH6)
+  // Output a LOW signal on OE_FLASH
   gpio_bit_reset(CTRLGBA,GBA_RD);
 
   for (unsigned long currAddress = 0; currAddress < flashSize; currAddress += 512) 
@@ -1424,7 +1424,7 @@ void readFLASH_GBA (boolean browseFile, unsigned long flashSize, uint32_t pos)
   showPercent(1,1,20,3);
   f_close(&tf);
 
-  // Set CS_FLASH(PH0) high
+  // Set CS_FLASH high
   gpio_bit_set(CTRLGBA,CS_SRAM);
 
   // Signal end of process
@@ -1435,13 +1435,13 @@ void busyCheck_GBA(int currByte)
 {
   // Set data pins to input
   setDataInMode();
-  // Output a LOW signal on OE_FLASH(PH6)
+  // Output a LOW signal on OE_FLASH
   gpio_bit_reset(CTRLGBA,GBA_RD);
   // Read PINC
   while (((GPIO_ISTAT(ADDR_3)>>8)&0xFF) != sdBuffer[currByte]) 
   {
   }
-  // Output a HIGH signal on OE_FLASH(PH6)
+  // Output a HIGH signal on OE_FLASH
   gpio_bit_set(CTRLGBA,GBA_RD);
   // Set data pins to output
   setDataOutMode();
@@ -1449,7 +1449,7 @@ void busyCheck_GBA(int currByte)
 
 void writeFLASH_GBA (boolean browseFile, unsigned long flashSize, uint32_t pos)
 {
-  // Output a HIGH signal on CS_ROM(PH3) WE_FLASH(PH5) and OE_FLASH(PH6)
+  // Output a HIGH signal on CS_ROM WE_FLASH and OE_FLASH
   gpio_bit_set(CTRLGBA,GBA_RD|GBA_WR|CS_ROM);
 
   // Set address ports to output
@@ -1475,7 +1475,7 @@ void writeFLASH_GBA (boolean browseFile, unsigned long flashSize, uint32_t pos)
     if (pos != 0)
       f_lseek(&tf,pos);
 
-    // Output a LOW signal on CE_FLASH(PH0)
+    // Output a LOW signal on CE_FLASH
     gpio_bit_reset(CTRLGBA,CS_SRAM);
 
     for (unsigned long currAddress = 0; currAddress < flashSize; currAddress += 512) 
@@ -1496,7 +1496,7 @@ void writeFLASH_GBA (boolean browseFile, unsigned long flashSize, uint32_t pos)
         busyCheck_GBA(c);
       }
     }
-    // Set CS_FLASH(PH0) high
+    // Set CS_FLASH high
     gpio_bit_set(CTRLGBA,CS_SRAM);
 
     // Close the file:
@@ -1514,7 +1514,7 @@ void writeFLASH_GBA (boolean browseFile, unsigned long flashSize, uint32_t pos)
 // Check if the Flashrom was written without any error
 void verifyFLASH_GBA(unsigned long flashSize, uint32_t pos) 
 {
-  // Output a HIGH signal on CS_ROM(PH3) WE_FLASH(PH5)
+  // Output a HIGH signal on CS_ROM WE_FLASH
   gpio_bit_set(CTRLGBA,GBA_WR|CS_ROM);
 
   // Set address ports to output
@@ -1523,7 +1523,7 @@ void verifyFLASH_GBA(unsigned long flashSize, uint32_t pos)
   // Set data pins to input
   setDataInMode();
 
-  // Output a LOW signal on CE_FLASH(PH0) and  OE_FLASH(PH6)
+  // Output a LOW signal on CE_FLASH and  OE_FLASH
   gpio_bit_reset(CTRLGBA,CS_SRAM|GBA_RD);
 
   // Signal beginning of process
@@ -1557,7 +1557,7 @@ void verifyFLASH_GBA(unsigned long flashSize, uint32_t pos)
   }
   f_close(&tf);
 
-  // Set CS_FLASH(PH0) high
+  // Set CS_FLASH high
   gpio_bit_set(CTRLGBA,CS_SRAM);
 
   if (wrError == 0) 
