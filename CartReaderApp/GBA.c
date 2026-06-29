@@ -22,72 +22,88 @@ char cartID[5];
 byte romVersion = 0;
 byte forceSaveType = 0;
 
-
-
-
-
 /******************************************
    Low level functions
 *****************************************/
 void delay_GBA()
 {
-  //__asm__("nop\n\t""nop\n\t");
+  //At 108MHz a NOP would take 9.26ns, so this delay is approximately 37ns long
   __asm__("nop\n\t""nop\n\t""nop\n\t""nop\n\t");
-  //__asm__("nop\n\t""nop\n\t""nop\n\t""nop\n\t""nop\n\t");
-  //__asm__("nop\n\t""nop\n\t""nop\n\t""nop\n\t""nop\n\t");
-  //__asm__("nop\n\t""nop\n\t""nop\n\t""nop\n\t""nop\n\t");
-  //__asm__("nop\n\t""nop\n\t""nop\n\t""nop\n\t""nop\n\t");
-  //__asm__("nop\n\t""nop\n\t""nop\n\t""nop\n\t""nop\n\t");
 }
-
-
-
-void setROM_GBA() 
-{
-  // CS_SRAM(B3)
-  // CS_ROM(B15)
-  // WR(B13)
-  // RD(B14)
-  gpio_init(CTRLGBA,GPIO_MODE_OUT_PP,GPIO_OSPEED_2MHZ,CS_SRAM|CS_ROM|GBA_WR|GBA_RD);
-  gpio_bit_set(CTRLGBA,CS_SRAM|CS_ROM|GBA_WR|GBA_RD);
-  // AD0-AD7
-  gpio_init(ADDR_1,GPIO_MODE_OUT_PP,GPIO_OSPEED_50MHZ,BITS(4,15));
-  // AD8-AD15
-  gpio_init(ADDR_2,GPIO_MODE_OUT_PP,GPIO_OSPEED_50MHZ,BITS(8,11));
-  // AD16-AD23
-  gpio_init(ADDR_3,GPIO_MODE_OUT_PP,GPIO_OSPEED_50MHZ,BITS(8,15));
-  // Wait
-  delay(688);
-}
-
 
 
 //#define TEST_MY_CART
 
-word readWord_GBA(unsigned long Address) 
+void setAddrOutMode()
 {
-
-
-  // Divide address by two to get word addressing
-  unsigned long myAddress = Address >> 1;
-
-
-  // Set address/data ports to output
   GPIO_CTL1(ADDR_1) = 0x33333333;//A0-A7
   GPIO_CTL0(ADDR_1) = (GPIO_CTL0(ADDR_1)&0xFFFF) + 0x33330000;//A12-A15
   GPIO_CTL1(ADDR_2) = (GPIO_CTL1(ADDR_2)&0xFFFF0000) + 0x3333;//A8-A11
-  GPIO_CTL1(ADDR_3) = 0x33333333;
-  //gpio_init(ADDR_1,GPIO_MODE_OUT_PP,GPIO_OSPEED_10MHZ,BITS(4,15));
-  //gpio_init(ADDR_2,GPIO_MODE_OUT_PP,GPIO_OSPEED_10MHZ,BITS(8,11));
-  //gpio_init(ADDR_3,GPIO_MODE_OUT_PP,GPIO_OSPEED_10MHZ,BITS(8,15));
+}
 
+void setAddrInMode()
+{
+  GPIO_CTL1(ADDR_1) = 0x44444444;//A0-A7
+  GPIO_CTL0(ADDR_1) = (GPIO_CTL0(ADDR_1)&0xFFFF) + 0x44440000;//A12-A15
+  GPIO_CTL1(ADDR_2) = (GPIO_CTL1(ADDR_2)&0xFFFF0000) + 0x4444;//A8-A11
+}
+
+void setAddr(unsigned long address, bool fullbus) {
+  GPIO_OCTL(ADDR_1) = (GPIO_OCTL(ADDR_1)&0xFFFF000F) + ((address << 8)&0xFF00) + ((address >> 8)&0xF0);
+  GPIO_OCTL(ADDR_2) = (GPIO_OCTL(ADDR_2)&0xFFFFF0FF) + (address & 0x0F00);
+  if (fullbus) {
+    GPIO_OCTL(ADDR_3) = (GPIO_OCTL(ADDR_3)&0xFFFF00FF) + ((address >> 8)&0xFF00);
+  }
+}
+
+void setDataOutMode()
+{
+  GPIO_CTL1(ADDR_3) = 0x33333333;
+}
+
+void setDataInMode()
+{
+  GPIO_CTL1(ADDR_3) = 0x44444444;
+}
+
+void setData(byte data)
+{
+  GPIO_OCTL(ADDR_3) = (GPIO_OCTL(ADDR_3)&0xFFFF00FF) + (data<<8);
+}
+
+void setROM_GBA() 
+{
+  // CS_SRAM
+  // CS_ROM
+  // WR
+  // RD
+  gpio_init(CTRLGBA,GPIO_MODE_OUT_PP,GPIO_OSPEED_2MHZ,CS_SRAM|CS_ROM|GBA_WR|GBA_RD);
+  gpio_bit_set(CTRLGBA,CS_SRAM|CS_ROM|GBA_WR|GBA_RD);
+  setAddrOutMode();
+  setDataOutMode();
+  //// AD0-AD7
+  //gpio_init(ADDR_1,GPIO_MODE_OUT_PP,GPIO_OSPEED_50MHZ,BITS(4,15));
+  //// AD8-AD15
+  //gpio_init(ADDR_2,GPIO_MODE_OUT_PP,GPIO_OSPEED_50MHZ,BITS(8,11));
+  //// AD16-AD23
+  //gpio_init(ADDR_3,GPIO_MODE_OUT_PP,GPIO_OSPEED_50MHZ,BITS(8,15));
+  // Wait
+  delay(688);
+}
+
+word readWord_GBA(unsigned long Address) 
+{
+  // Divide address by two to get word addressing
+  unsigned long myAddress = Address >> 1;
+
+  // Set address/data ports to output
+  setAddrOutMode();
+  setDataOutMode();
 
   // Output address to address pins,
-  GPIO_OCTL(ADDR_1) = (GPIO_OCTL(ADDR_1)&0xFFFF000F) + ((myAddress << 8)&0xFF00) + ((myAddress >> 8)&0xF0);
-  GPIO_OCTL(ADDR_2) = (GPIO_OCTL(ADDR_2)&0xFFFFF0FF) + (myAddress & 0x0F00);
-  GPIO_OCTL(ADDR_3) = (GPIO_OCTL(ADDR_3)&0xFFFF00FF) + ((myAddress >> 8)&0xFF00);
+  setAddr(myAddress, true);
 
-  // Pull CS(PH3) to LOW
+  // Pull CS to LOW
   gpio_bit_reset(CTRLGBA,CS_ROM);
 
   delay_GBA();
@@ -98,18 +114,10 @@ word readWord_GBA(unsigned long Address)
   #endif
 
   // Set address/data ports to input
-  GPIO_OCTL(ADDR_1) = (GPIO_OCTL(ADDR_1)&0xFFFF000F);
-  GPIO_OCTL(ADDR_2) = (GPIO_OCTL(ADDR_2)&0xFFFFF0FF);
-  GPIO_CTL1(ADDR_1) = 0x44444444;//A0-A7
-  GPIO_CTL0(ADDR_1) = (GPIO_CTL0(ADDR_1)&0xFFFF) + 0x44440000;//A12-A15
-  GPIO_CTL1(ADDR_2) = (GPIO_CTL1(ADDR_2)&0xFFFF0000) + 0x4444;//A8-A11
-
-  //gpio_init(ADDR_1,GPIO_MODE_IN_FLOATING,GPIO_OSPEED_10MHZ,BITS(4,15));
-  //gpio_init(ADDR_2,GPIO_MODE_IN_FLOATING,GPIO_OSPEED_10MHZ,BITS(8,11));
-  //gpio_init(ADDR_3,GPIO_MODE_IN_FLOATING,GPIO_OSPEED_10MHZ,BITS(8,15));
-
-    
-  //delay_GBA(); 
+  setAddr(0,false);
+  //GPIO_OCTL(ADDR_1) = (GPIO_OCTL(ADDR_1)&0xFFFF000F);
+  //GPIO_OCTL(ADDR_2) = (GPIO_OCTL(ADDR_2)&0xFFFFF0FF);
+  setAddrInMode();
 
   // Pull RD(PH6) to LOW
   gpio_bit_reset(CTRLGBA,GBA_RD);
@@ -120,40 +128,27 @@ word readWord_GBA(unsigned long Address)
   delay_GBA();
 
   word myWord = GPIO_ISTAT(ADDR_1)&0xFFFF;
-  //printf("-%04x\n",myWord);
   myWord = ((myWord << 8) + (myWord >> 8))&0xF0FF;
   myWord += (GPIO_ISTAT(ADDR_2)&0x0F00);
 
   // Switch RD(PH6) to HIGH
   gpio_bit_set(CTRLGBA,GBA_RD|CS_ROM);
 
-  //delay_GBA();  
-  //gpio_bit_set(CTRLGBA,CS_ROM);
-  //delay_GBA();  
   return myWord;
 }
 
-
-
 word readWord_buf_GBA(unsigned long Address, uint16_t *outBuf, uint16_t cnt) 
 {
-
-
   // Divide address by two to get word addressing
   unsigned long myAddress = Address >> 1;
 
 
   // Set address/data ports to output
-  GPIO_CTL1(ADDR_1) = 0x33333333;//A0-A7
-  GPIO_CTL0(ADDR_1) = (GPIO_CTL0(ADDR_1)&0xFFFF) + 0x33330000;//A12-A15
-  GPIO_CTL1(ADDR_2) = (GPIO_CTL1(ADDR_2)&0xFFFF0000) + 0x3333;//A8-A11
-  GPIO_CTL1(ADDR_3) = 0x33333333;
-
+  setAddrOutMode();
+  setDataOutMode();
 
   // Output address to address pins,
-  GPIO_OCTL(ADDR_1) = (GPIO_OCTL(ADDR_1)&0xFFFF000F) + ((myAddress << 8)&0xFF00) + ((myAddress >> 8)&0xF0);
-  GPIO_OCTL(ADDR_2) = (GPIO_OCTL(ADDR_2)&0xFFFFF0FF) + (myAddress & 0x0F00);
-  GPIO_OCTL(ADDR_3) = (GPIO_OCTL(ADDR_3)&0xFFFF00FF) + ((myAddress >> 8)&0xFF00);
+  setAddr(myAddress, true);
 
   // Pull CS(PH3) to LOW
   gpio_bit_reset(CTRLGBA,CS_ROM);
@@ -162,18 +157,10 @@ word readWord_buf_GBA(unsigned long Address, uint16_t *outBuf, uint16_t cnt)
   delay_GBA();
 
   // Set address/data ports to input
-  GPIO_OCTL(ADDR_1) = (GPIO_OCTL(ADDR_1)&0xFFFF000F);
-  GPIO_OCTL(ADDR_2) = (GPIO_OCTL(ADDR_2)&0xFFFFF0FF);
-  GPIO_CTL1(ADDR_1) = 0x44444444;//A0-A7
-  GPIO_CTL0(ADDR_1) = (GPIO_CTL0(ADDR_1)&0xFFFF) + 0x44440000;//A12-A15
-  GPIO_CTL1(ADDR_2) = (GPIO_CTL1(ADDR_2)&0xFFFF0000) + 0x4444;//A8-A11
-
-  //gpio_init(ADDR_1,GPIO_MODE_IN_FLOATING,GPIO_OSPEED_10MHZ,BITS(4,15));
-  //gpio_init(ADDR_2,GPIO_MODE_IN_FLOATING,GPIO_OSPEED_10MHZ,BITS(8,11));
-  //gpio_init(ADDR_3,GPIO_MODE_IN_FLOATING,GPIO_OSPEED_10MHZ,BITS(8,15));
-
-    
-  //delay_GBA(); 
+  setAddr(0,false);
+  //GPIO_OCTL(ADDR_1) = (GPIO_OCTL(ADDR_1)&0xFFFF000F);
+  //GPIO_OCTL(ADDR_2) = (GPIO_OCTL(ADDR_2)&0xFFFFF0FF);
+  setAddrInMode();
 
   for(WORD i = 0;i<cnt;i++)
   {
@@ -192,12 +179,9 @@ word readWord_buf_GBA(unsigned long Address, uint16_t *outBuf, uint16_t cnt)
     gpio_bit_set(CTRLGBA,GBA_RD);
 
     outBuf[i] = myWord;
-    //delay_GBA();  
-    //delay_GBA();  
-
   }
   gpio_bit_set(CTRLGBA,CS_ROM);
-  //delay_GBA();  
+
   return cnt;
 }
 
@@ -207,25 +191,16 @@ void writeWord_GBA(unsigned long Address, word myWord)
   // Divide address by two to get word addressing
   unsigned long myAddress = Address >> 1;
 
-
   // Set address/data ports to output
-  GPIO_CTL1(ADDR_1) = 0x33333333;//A0-A7
-  GPIO_CTL0(ADDR_1) = (GPIO_CTL0(ADDR_1)&0xFFFF) + 0x33330000;//A12-A15
-  GPIO_CTL1(ADDR_2) = (GPIO_CTL1(ADDR_2)&0xFFFF0000) + 0x3333;//A8-A11
-  GPIO_CTL1(ADDR_3) = 0x33333333;
-  //gpio_init(ADDR_1,GPIO_MODE_OUT_PP,GPIO_OSPEED_10MHZ,BITS(4,15));
-  //gpio_init(ADDR_2,GPIO_MODE_OUT_PP,GPIO_OSPEED_10MHZ,BITS(8,11));
-  //gpio_init(ADDR_3,GPIO_MODE_OUT_PP,GPIO_OSPEED_10MHZ,BITS(8,15));
+  setAddrOutMode();
+  setDataOutMode();
 
   // Output address to address pins,
-  GPIO_OCTL(ADDR_1) = (GPIO_OCTL(ADDR_1)&0xFFFF000F) + ((myAddress << 8)&0xFF00) + ((myAddress >> 8)&0xF0);
-  GPIO_OCTL(ADDR_2) = (GPIO_OCTL(ADDR_2)&0xFFFFF0FF) + (myAddress & 0x0F00);
-  GPIO_OCTL(ADDR_3) = (GPIO_OCTL(ADDR_3)&0xFFFF00FF) + ((myAddress >> 8)&0xFF00);
+  setAddr(myAddress, true);
 
   // Pull CS(PH3) to LOW
   gpio_bit_reset(CTRLGBA,CS_ROM);
 
-  //__asm__("nop\n\t""nop\n\t");
   delay_GBA();
   delay_GBA();
   delay_GBA();
@@ -242,18 +217,17 @@ void writeWord_GBA(unsigned long Address, word myWord)
   // Pull WR(PH5) to LOW
   gpio_bit_reset(CTRLGBA,GBA_WR);
 
-  //__asm__("nop\n\t""nop\n\t");
   delay_GBA();
   delay_GBA();  
   delay_GBA();  
   delay_GBA();
+
   // Switch WR(PH5) to HIGH
   gpio_bit_set(CTRLGBA,GBA_WR);
+
   // Switch CS_ROM(PH3) to HIGH
   delay_GBA();
   gpio_bit_set(CTRLGBA,CS_ROM);
-  //delay_GBA();    
- 
 }
 
 // This function swaps bit at positions p1 and p2 in an integer n
@@ -277,8 +251,6 @@ word swapBits(word n, word p1, word p2)
   return result;
 }
 
-
-
 // Some repros have D0 and D1 switched
 word readWord_GAB(unsigned long myAddress) {
 #ifdef TEST_MY_CART
@@ -298,23 +270,14 @@ void writeWord_GAB(unsigned long myAddress, word myWord) {
 }
 
 
-void setAddrOutMode()
-{
-  GPIO_CTL1(ADDR_1) = 0x33333333;//A0-A7
-  GPIO_CTL0(ADDR_1) = (GPIO_CTL0(ADDR_1)&0xFFFF) + 0x33330000;//A12-A15
-  GPIO_CTL1(ADDR_2) = (GPIO_CTL1(ADDR_2)&0xFFFF0000) + 0x3333;//A8-A11
-}
-
-
 byte readByte_GBA(unsigned long myAddress) 
 {
   // Set address ports to output
   // Set data port to input
-  GPIO_CTL1(ADDR_3) = 0x44444444;
+  setDataInMode();
 
   // Output address to address pins,
-  GPIO_OCTL(ADDR_1) = (GPIO_OCTL(ADDR_1)&0xFFFF000F) + ((myAddress << 8)&0xFF00) + ((myAddress >> 8)&0xF0);
-  GPIO_OCTL(ADDR_2) = (GPIO_OCTL(ADDR_2)&0xFFFFF0FF) + (myAddress & 0x0F00);
+  setAddr(myAddress, false);
 
   // Pull OE_SRAM(PH6) to LOW
   // Pull CE_SRAM(PH0) to LOW
@@ -323,8 +286,6 @@ byte readByte_GBA(unsigned long myAddress)
   // Hold address for at least 25ns and wait 150ns before access
   delay_GBA();
   delay_GBA();
-  //__asm__("nop\n\t""nop\n\t""nop\n\t""nop\n\t""nop\n\t""nop\n\t""nop\n\t""nop\n\t");
-  //__asm__("nop\n\t""nop\n\t""nop\n\t""nop\n\t""nop\n\t""nop\n\t""nop\n\t""nop\n\t");
 
   // Read byte
   byte tempByte = GPIO_ISTAT(ADDR_3)>>8;
@@ -339,35 +300,31 @@ void writeByte_GBA(unsigned long myAddress, byte myData)
 {
   // Set address ports to output
   // Set data port to output
-  GPIO_CTL1(ADDR_3) = 0x33333333;
+  setDataOutMode();
 
   // Output address to address pins
-  GPIO_OCTL(ADDR_1) = (GPIO_OCTL(ADDR_1)&0xFFFF000F) + ((myAddress << 8)&0xFF00) + ((myAddress >> 8)&0xF0);
-  GPIO_OCTL(ADDR_2) = (GPIO_OCTL(ADDR_2)&0xFFFFF0FF) + (myAddress & 0x0F00);
+  setAddr(myAddress, false);
 
   // Output data to data pins
-  GPIO_OCTL(ADDR_3) = (GPIO_OCTL(ADDR_3)&0xFFFF00FF) + (myData << 8);
+  setData(myData);
 
   // Wait till output is stable
   delay_GBA();
 
-  // Pull WE_SRAM(PH5) to LOW
-  // Pull CE_SRAM(PH0) to LOW
+  // Pull WE_SRAM to LOW
+  // Pull CE_SRAM to LOW
   gpio_bit_reset(CTRLGBA,GBA_WR|CS_SRAM);
 
   // Leave WR low for at least 60ns
   delay_GBA();
-  //__asm__("nop\n\t""nop\n\t""nop\n\t""nop\n\t""nop\n\t""nop\n\t""nop\n\t""nop\n\t""nop\n\t""nop\n\t");
 
-  // Pull CE_SRAM(PH0) HIGH
-  // Pull WE_SRAM(PH5) HIGH
+  // Pull CE_SRAM HIGH
+  // Pull WE_SRAM HIGH
   gpio_bit_set(CTRLGBA,GBA_WR|CS_SRAM);
 
   // Leave WR high for at least 50ns
   delay_GBA();
-  //__asm__("nop\n\t""nop\n\t""nop\n\t""nop\n\t""nop\n\t""nop\n\t""nop\n\t""nop\n\t");
 }
-
 
 /******************************************
   GBA ROM Functions
@@ -381,7 +338,6 @@ void getCartInfo_GBA()
   for (int currWord = 0; currWord < 96; currWord++) 
   {
     word tempWord = readWord_GBA(currWord<<1);
-    //printf("%04x\n",tempWord);
     ((word *)sdBuffer)[currWord] = tempWord;
   }
 
@@ -514,8 +470,6 @@ void getCartInfo_GBA()
   }
 }
 
-
-
 // Dump ROM
 void readROM_GBA() 
 {
@@ -551,7 +505,7 @@ void readROM_GBA()
     if (myAddress % 16384 == 0)
     {
       LED_RED_BLINK;
-      showPersent(myAddress,cartSize,20,3);
+      showPercent(myAddress,cartSize,20,3);
     }
 
     for (int currWord = 0; currWord < 256; currWord++) 
@@ -564,7 +518,7 @@ void readROM_GBA()
     f_write(&tf, sdBuffer, 512, &wdt);
   }
 
-  showPersent(1,1,20,3);
+  showPercent(1,1,20,3);
 
   // Close the file:
   f_close(&tf);
@@ -582,7 +536,6 @@ boolean compare_checksum_GBA ()
   foldern = load_dword();
   sprintf(folder, "/GBA/ROM/%s/%d", romName, foldern - 1);
   f_chdir(folder);
-
 
   FIL tf;
   // If file exists
@@ -622,10 +575,6 @@ boolean compare_checksum_GBA ()
     return 0;
   }
 }
-
-
-
-
 
 /******************************************
   GBA SRAM SAVE Functions
@@ -688,7 +637,6 @@ void writeSRAM_GBA(boolean browseFile, unsigned long sramSize, uint32_t pos)
   {
     filePath[0] = '\0';
     fileBrowser("/","Select srm file:");
-    // Create filepath
     OledClear();
   }
 
@@ -717,11 +665,11 @@ void writeSRAM_GBA(boolean browseFile, unsigned long sramSize, uint32_t pos)
         writeByte_GBA(currAddress + c, sdBuffer[c]);
       }
 
-      showPersent(currAddress,sramSize,6,2);
+      showPercent(currAddress,sramSize,6,2);
     }
     // Close the file:
     f_close(&tf);
-    showPersent(1,1,6,2);
+    showPercent(1,1,6,2);
     OledShowString(0,3,"finished!",8);
 
   }
@@ -743,7 +691,6 @@ unsigned long verifySRAM_GBA(unsigned long sramSize, uint32_t pos)
     // Seek to a new position in the file
     if (pos != 0)
       f_lseek(&tf, pos);
-
     
     setAddrOutMode();
 
@@ -756,7 +703,6 @@ unsigned long verifySRAM_GBA(unsigned long sramSize, uint32_t pos)
       {
         // Read byte
         byte bt = readByte_GBA(currAddress + c);
-        //printf("\r\n%02x",bt);
         if (bt != sdBuffer[c]) {
           writeErrors++;
         }
@@ -776,9 +722,8 @@ unsigned long verifySRAM_GBA(unsigned long sramSize, uint32_t pos)
 
 void TestSRAM_GBA(unsigned long sramSize)
 {
-  //
   OledClear();
-  //
+
   OledShowString(0,0,"Start SRAM testing...",8);
   OledShowString(0,1,"write:",8);
 
@@ -790,11 +735,10 @@ void TestSRAM_GBA(unsigned long sramSize)
     byte wb = currAddress & 0xFF;
     // Write byte
     writeByte_GBA(currAddress, wb);
-    if(wb == 0xFF)showPersent(currAddress,sramSize,36,1);
+    if(wb == 0xFF)showPercent(currAddress,sramSize,36,1);
   }
-  showPersent(1,1,36,1);
+  showPercent(1,1,36,1);
   OledShowString(68,1,"read:",8);
-
 
   setAddrOutMode();
   uint32_t wErrors = 0;
@@ -802,19 +746,16 @@ void TestSRAM_GBA(unsigned long sramSize)
     // Read byte
     byte bt = currAddress & 0xFF;
     byte br = readByte_GBA(currAddress);
-    //printf("\r\n%02x",bt);
     if (bt != br) {
       wErrors++;
     }
-    if(bt == 0xFF)showPersent(currAddress,sramSize,96,1);
+    if(bt == 0xFF)showPercent(currAddress,sramSize,96,1);
   }
-  showPersent(1,1,96,1);
+  showPercent(1,1,96,1);
   char msgbuf[64] = {0};
   if(wErrors > 0){
-    //
     sprintf(msgbuf,"Error %d bytes...",wErrors);
   }else{
-    //
     strcpy(msgbuf,"RAM Test ok!");
   }
   OledShowString(0,2,msgbuf,8);
@@ -825,7 +766,6 @@ void TestSRAM_GBA(unsigned long sramSize)
   GBA Eeprom SAVE Functions
 *****************************************/
 
-
 // Send address as bits to eeprom
 void send_GBA(word currAddr, word numBits) 
 {
@@ -833,58 +773,71 @@ void send_GBA(word currAddr, word numBits)
     // If you want the k-th bit of n, then do
     // (n & ( 1 << k )) >> k
     if (((currAddr & ( 1 << (addrBit - 1))) >> (addrBit - 1))) {
-      // Set A0(PF0) to High
+      // Set A0 to High
       gpio_bit_set(ADDR_1,GPIO_PIN_8);
     }
     else {
-      // Set A0(PF0) to Low
+      // Set A0 to Low
       gpio_bit_reset(ADDR_1,GPIO_PIN_8);
     }
-    // Set WR(PH5) to LOW
+
+    // Set WR to LOW
     gpio_bit_reset(CTRLGBA,GBA_WR);
-    // Set WR(PH5) to High
+    delay_GBA();
+    delay_GBA();
+
+    // Set WR to High
     gpio_bit_set(CTRLGBA,GBA_WR);
+    delay_GBA();
+    delay_GBA();
   }
 }
-
 
 // Write 512K eeprom block
 void writeBlock_EEP(word startAddr, word eepSize) 
 {
   // Setup
-  // Set A0(PF0) to Output
-  gpio_init(ADDR_1,GPIO_MODE_OUT_PP,GPIO_OSPEED_50MHZ,GPIO_PIN_8|GPIO_PIN_7);
-  // Set A23/D7(PC7) to Output
-  //gpio_init(ADDR_1,GPIO_MODE_OUT_PP,GPIO_OSPEED_50MHZ,GPIO_PIN_7);
+  // Set A0 to Output
+  gpio_init(ADDR_1,GPIO_MODE_OUT_PP,GPIO_OSPEED_50MHZ,A0);
 
-  // Set CS_ROM(PH3) WR(PH5) RD(PH6) to High
+  // Set A23 to Output
+  gpio_init(ADDR_3,GPIO_MODE_OUT_PP,GPIO_OSPEED_50MHZ,AD23);
+
+  // Set CS_ROM WR RD to High
   gpio_bit_set(CTRLGBA,GBA_RD|GBA_WR|CS_ROM);
-  // Set A0(PF0) to High
-  // Set A23/D7(PC7) to High
-  gpio_bit_set(ADDR_1,GPIO_PIN_8|GPIO_PIN_7);
-  
 
-  __asm__("nop\n\t""nop\n\t");
+  // Set A0 to High
+  gpio_bit_set(ADDR_1,A0);
+
+  // Set A23 to High
+  gpio_bit_set(ADDR_3,AD23);
+  delay_GBA();
 
   // Write 64*8=512 bytes
   for (word currAddr = startAddr; currAddr < startAddr + 64; currAddr++) 
   {
-    // Set CS_ROM(PH3) to LOW
+    // Set CS_ROM to LOW
     gpio_bit_reset(CTRLGBA,CS_ROM);
 
     // Send write request "10"
-    // Set A0(PF0) to High
-    gpio_bit_set(ADDR_1,GPIO_PIN_8);
-    // Set WR(PH5) to LOW
+    // Set A0 to High
+    gpio_bit_set(ADDR_1,A0);
+
+    // Set WR to LOW
     gpio_bit_reset(CTRLGBA,GBA_WR);
-    // Set WR(PH5) to High
+
+    // Set WR to High
     gpio_bit_set(CTRLGBA,GBA_WR);
-    // Set A0(PF0) to LOW
-    gpio_bit_reset(ADDR_1,GPIO_PIN_8);
-    // Set WR(PH5) to LOW
+
+    // Set A0 to LOW
+    gpio_bit_reset(ADDR_1,A0);
+
+    // Set WR to LOW
     gpio_bit_reset(CTRLGBA,GBA_WR);
-    // Set WR(PH5) to High
+
+    // Set WR to High
     gpio_bit_set(CTRLGBA,GBA_WR);
+
 
     // Send either 6 or 14 bit address
     if (eepSize == 4) {
@@ -894,7 +847,8 @@ void writeBlock_EEP(word startAddr, word eepSize)
       send_GBA(currAddr, 14);
     }
 
-    __asm__("nop\n\t""nop\n\t""nop\n\t""nop\n\t""nop\n\t""nop\n\t""nop\n\t""nop\n\t");
+    delay_GBA();
+    delay_GBA();
 
     // Send data
     for (byte currByte = 0; currByte < 8; currByte++) {
@@ -902,64 +856,81 @@ void writeBlock_EEP(word startAddr, word eepSize)
     }
 
     // Send stop bit
-    // Set A0(PF0) to LOW
-    gpio_bit_reset(ADDR_1,GPIO_PIN_8);
-    // Set WR(PH5) to LOW
+    // Set A0 to LOW
+    gpio_bit_reset(ADDR_1,A0);
+
+    // Set WR to LOW
     gpio_bit_reset(CTRLGBA,GBA_WR);
-    // Set WR(PH5) to High
+    delay_GBA();
+
+    // Set WR to High
     gpio_bit_set(CTRLGBA,GBA_WR);
 
-    // Set CS_ROM(PH3) to High
+    // Set CS_ROM to High
     gpio_bit_set(CTRLGBA,CS_ROM);
 
     // Wait until done
-    // Set A0(PF0) to Input
-    gpio_init(ADDR_1,GPIO_MODE_IN_FLOATING,GPIO_OSPEED_50MHZ,GPIO_PIN_8);
+    // Set A0 to Input
+    gpio_init(ADDR_1,GPIO_MODE_IN_FLOATING,GPIO_OSPEED_50MHZ,A0);
 
     do {
-      // Set  CS_ROM(PH3) RD(PH6) to LOW
-      gpio_bit_reset(CTRLGBA,CS_ROM);
-      // Set  CS_ROM(PH3) RD(PH6) to High
-      gpio_bit_set(CTRLGBA,CS_ROM);
+      // Set CS_ROM RD to LOW
+      gpio_bit_reset(CTRLGBA,GBA_RD|CS_ROM);
+      delay_GBA();
+      delay_GBA();
+
+      // Set CS_ROM RD to High
+      gpio_bit_set(CTRLGBA,GBA_RD|CS_ROM);
+      delayMicroseconds(1);
     }
     while (((GPIO_ISTAT(ADDR_1) >> 8) & 0x1) == 0);
 
-    // Set A0(PF0) to Output
-    gpio_init(ADDR_1,GPIO_MODE_OUT_PP,GPIO_OSPEED_50MHZ,GPIO_PIN_8);
+    // Set A0 to Output
+    gpio_init(ADDR_1,GPIO_MODE_OUT_PP,GPIO_OSPEED_50MHZ,A0);
   }
 }
 
 // Reads 512 bytes from eeprom
 void readBlock_EEP(word startAddress, word eepSize) {
   // Setup
-  // Set A0(PF0) to Output
-  // Set A23/D7(PC7) to Output
-  gpio_init(ADDR_1,GPIO_MODE_OUT_PP,GPIO_OSPEED_50MHZ,GPIO_PIN_8|GPIO_PIN_7);
+  gpio_init(CTRLGBA,GPIO_MODE_OUT_PP,GPIO_OSPEED_50MHZ,GBA_RD|GBA_WR|CS_ROM);
 
-  // Set CS_ROM(PH3) WR(PH5) RD(PH6) to High
+  // Set A0 to Output
+  gpio_init(ADDR_1,GPIO_MODE_OUT_PP,GPIO_OSPEED_50MHZ,A0);
+
+  // Set A23 to Output
+  gpio_init(ADDR_3,GPIO_MODE_OUT_PP,GPIO_OSPEED_50MHZ,AD23);
+
+  // Set CS_ROM WR RD to High
   gpio_bit_set(CTRLGBA,GBA_RD|GBA_WR|CS_ROM);
-  // Set A0(PF0) to High
-  // Set A23/D7(PC7) to High
-  gpio_bit_set(ADDR_1,GPIO_PIN_8|GPIO_PIN_7);
 
-  __asm__("nop\n\t""nop\n\t");
+  // Set A0 to High
+  gpio_bit_set(ADDR_1,A0);
+
+  // Set A23 to High
+  gpio_bit_set(ADDR_3,AD23);
+  delay_GBA();
 
   // Read 64*8=512 bytes
   for (word currAddr = startAddress; currAddr < startAddress + 64; currAddr++) 
   {
-    // Set CS_ROM(PH3) to LOW
+    // Set CS_ROM to LOW
     gpio_bit_reset(CTRLGBA,CS_ROM);
 
     // Send read request "11"
-    // Set A0(PF0) to High
-    gpio_bit_set(ADDR_1,GPIO_PIN_8);
-    // Set WR(PH5) to LOW
+    // Set A0 to High
+    gpio_bit_set(ADDR_1,A0);
+
+    // Set WR to LOW
     gpio_bit_reset(CTRLGBA,GBA_WR);
-    // Set WR(PH5) to High
+
+    // Set WR to High
     gpio_bit_set(CTRLGBA,GBA_WR);
-    // Set WR(PH5) to LOW
+
+    // Set WR to LOW
     gpio_bit_reset(CTRLGBA,GBA_WR);
-    // Set WR(PH5) to High
+
+    // Set WR to High
     gpio_bit_set(CTRLGBA,GBA_WR);
 
     // Send either 6 or 14 bit address
@@ -971,55 +942,66 @@ void readBlock_EEP(word startAddress, word eepSize) {
     }
 
     // Send stop bit
-    // Set A0(PF0) to LOW
-    gpio_bit_reset(ADDR_1,GPIO_PIN_8);
-    // Set WR(PH5) to LOW
+    // Set A0 to LOW
+    gpio_bit_reset(ADDR_1,A0);
+
+    // Set WR to LOW
     gpio_bit_reset(CTRLGBA,GBA_WR);
-    // Set WR(PH5) to High
+
+    // Set WR to HIGH
     gpio_bit_set(CTRLGBA,GBA_WR);
 
-    // Set CS_ROM(PH3) to High
+    // Set CS_ROM to High
     gpio_bit_set(CTRLGBA,CS_ROM);
-
-    __asm__("nop\n\t""nop\n\t""nop\n\t""nop\n\t""nop\n\t""nop\n\t""nop\n\t""nop\n\t");
+    delay_GBA();
+    delay_GBA();
 
     // Read data
-    // Set A0(PF0) to Input
-    gpio_init(ADDR_1,GPIO_MODE_IN_FLOATING,GPIO_OSPEED_50MHZ,GPIO_PIN_8);
-    // Set CS_ROM(PH3) to low
+    // Set A0 to Input
+    gpio_bit_reset(ADDR_1,A0);
+    gpio_init(ADDR_1,GPIO_MODE_IN_FLOATING,GPIO_OSPEED_50MHZ,A0);
+
+    // Set CS_ROM to low
     gpio_bit_reset(CTRLGBA,CS_ROM);
 
     // Array that holds the bits
-    bool tempBits[65];
+    bool tempBits[64];
 
     // Ignore the first 4 bits
     for (byte i = 0; i < 4; i++) 
     {
-      // Set RD(PH6) to LOW
+      // Set RD to LOW
       gpio_bit_reset(CTRLGBA,GBA_RD);
-      // Set RD(PH6) to High
+      delay_GBA();
+
+      // Set RD to High
       gpio_bit_set(CTRLGBA,GBA_RD);
+      delay_GBA();
     }
 
     // Read the remaining 64bits into array
     for (byte currBit = 0; currBit < 64; currBit++) 
     {
-      // Set RD(PH6) to LOW
+      // Set RD to LOW
       gpio_bit_reset(CTRLGBA,GBA_RD);
-      // Set RD(PH6) to High
-      gpio_bit_set(CTRLGBA,GBA_RD);
+      delay_GBA();
 
-      // Read bit from A0(PF0)
+      // Set RD to High
+      gpio_bit_set(CTRLGBA,GBA_RD);
+      delay_GBA();
+
+      // Read bit from A0
       tempBits[currBit] = ((GPIO_ISTAT(ADDR_1) >> 8) & 0x1);
     }
 
-    // Set CS_ROM(PH3) to High
+    // Set CS_ROM to High
     gpio_bit_set(CTRLGBA,CS_ROM);
-    // Set A0(PF0) to Output
-    gpio_init(ADDR_1,GPIO_MODE_OUT_PP,GPIO_OSPEED_50MHZ,GPIO_PIN_8);
-    // Set A0(PF0) to High
-    gpio_bit_set(ADDR_1,GPIO_PIN_8);
 
+    // Set A0 to Output
+    gpio_init(ADDR_1,GPIO_MODE_OUT_PP,GPIO_OSPEED_50MHZ,A0);
+
+    // Set A0 to High
+    gpio_bit_set(ADDR_1,A0);
 
     // OR 8 bits into one byte for a total of 8 bytes
     for (byte j = 0; j < 64; j += 8) {
@@ -1027,9 +1009,6 @@ void readBlock_EEP(word startAddress, word eepSize) {
     }
   }
 }
-
-
-
 
 // Check if the SRAM was written without any error
 unsigned long verifyEEP_GBA(word eepSize) 
@@ -1066,7 +1045,6 @@ unsigned long verifyEEP_GBA(word eepSize)
   f_close(&tf);
   return wrError;
 }
-
 
 // Write eeprom from file
 void writeEeprom_GBA(word eepSize) {
@@ -1116,11 +1094,12 @@ void readEeprom_GBA(word eepSize) {
   // create a new folder for the save file
   foldern = load_dword();
 
-  sprintf(folder, "GBA/SAVE/%s/%d", romName, foldern);
+  sprintf(folder, "GBA/SAVE/%s/%u", romName, foldern);
   my_mkdir(folder);
   f_chdir(folder);
 
   // Save location
+  sprintf(folder, "%s/%u",romName, foldern);
   OledShowString(0,0,"Saving to :",8);
   OledShowString(0,1,folder,8);
   
@@ -1164,19 +1143,16 @@ void readEeprom_GBA(word eepSize) {
 byte readByteFlash_GBA(unsigned long myAddress) 
 {
   // Set address
-  GPIO_OCTL(ADDR_1) = (GPIO_OCTL(ADDR_1)&0xFFFF000F) + ((myAddress << 8)&0xFF00) + ((myAddress >> 8)&0xF0);
-  GPIO_OCTL(ADDR_2) = (GPIO_OCTL(ADDR_2)&0xFFFFF0FF) + (myAddress & 0x0F00);
+  setAddr(myAddress, false);
 
   // Wait until byte is ready to read
+  delay_GBA();
+  delay_GBA();
   delay_GBA();
   delay_GBA();
 
   // Read byte
   byte tempByte = (GPIO_ISTAT(ADDR_3) >> 8)&0xFF;
-
-  // Arduino running at 16Mhz -> one nop = 62.5ns
-  delay_GBA();
-  delay_GBA();
 
   return tempByte;
 }
@@ -1184,10 +1160,9 @@ byte readByteFlash_GBA(unsigned long myAddress)
 void writeByteFlash_GBA(unsigned long myAddress, byte myData) 
 {
   //
-  GPIO_OCTL(ADDR_1) = (GPIO_OCTL(ADDR_1)&0xFFFF000F) + ((myAddress << 8)&0xFF00) + ((myAddress >> 8)&0xF0);
-  GPIO_OCTL(ADDR_2) = (GPIO_OCTL(ADDR_2)&0xFFFFF0FF) + (myAddress & 0x0F00);
+  setAddr(myAddress, false);
 
-  GPIO_OCTL(ADDR_3) = (GPIO_OCTL(ADDR_3)&0xFFFF00FF) + (myData<<8);
+  setData(myData);
 
   // Arduino running at 16Mhz -> one nop = 62.5ns
   // Wait till output is stable
@@ -1198,6 +1173,7 @@ void writeByteFlash_GBA(unsigned long myAddress, byte myData)
   gpio_bit_reset(CTRLGBA,GBA_WR);
 
   // Leave WE low for at least 40ns
+  delay_GBA();
   delay_GBA();
   delay_GBA();
 
@@ -1217,11 +1193,8 @@ void eraseFLASH_GBA()
 
   // Set address ports to output
   // Set data pins to output
-  GPIO_CTL1(ADDR_1) = 0x33333333;//A0-A7
-  GPIO_CTL0(ADDR_1) = (GPIO_CTL0(ADDR_1)&0xFFFF) + 0x33330000;//A12-A15
-  GPIO_CTL1(ADDR_2) = (GPIO_CTL1(ADDR_2)&0xFFFF0000) + 0x3333;//A8-A11
-  GPIO_CTL1(ADDR_3) = 0x33333333;
-
+  setAddrOutMode();
+  setDataOutMode();
 
   // Output a LOW signal on CE_FLASH(PH0)
   gpio_bit_reset(CTRLGBA,CS_SRAM);
@@ -1242,7 +1215,6 @@ void eraseFLASH_GBA()
 }
 
 
-
 void idFlash_GBA() 
 {
   // Output a HIGH signal on CS_ROM(PH3) WE_FLASH(PH5) and OE_FLASH(PH6)
@@ -1250,10 +1222,8 @@ void idFlash_GBA()
 
   // Set address ports to output
   // Set data pins to output
-  GPIO_CTL1(ADDR_1) = 0x33333333;//A0-A7
-  GPIO_CTL0(ADDR_1) = (GPIO_CTL0(ADDR_1)&0xFFFF) + 0x33330000;//A12-A15
-  GPIO_CTL1(ADDR_2) = (GPIO_CTL1(ADDR_2)&0xFFFF0000) + 0x3333;//A8-A11
-  GPIO_CTL1(ADDR_3) = 0x33333333;
+  setAddrOutMode();
+  setDataOutMode();
 
   // Output a LOW signal on CE_FLASH(PH0)
   gpio_bit_reset(CTRLGBA,CS_SRAM);
@@ -1264,18 +1234,16 @@ void idFlash_GBA()
   writeByteFlash_GBA(0x5555, 0x90);
 
   // Set data pins to input
-  GPIO_CTL1(ADDR_3) = 0x44444444;
+  setDataInMode();
 
   // Output a LOW signal on OE_FLASH(PH6)
   gpio_bit_reset(CTRLGBA,GBA_RD);
 
   // Wait 150ns before reading ID
-  // Arduino running at 16Mhz -> one nop = 62.5ns
-  __asm__("nop\n\t""nop\n\t""nop\n\t");
-  __asm__("nop\n\t""nop\n\t""nop\n\t");
-  __asm__("nop\n\t""nop\n\t""nop\n\t");
-  __asm__("nop\n\t""nop\n\t""nop\n\t");
-  __asm__("nop\n\t""nop\n\t""nop\n\t");
+  delay_GBA();
+  delay_GBA();
+  delay_GBA();
+  delay_GBA();
 
   // Read the two id bytes into a string
   byte bid0 = readByteFlash_GBA(0);
@@ -1294,10 +1262,8 @@ void resetFLASH_GBA()
 
   // Set address ports to output
   // Set data pins to output
-  GPIO_CTL1(ADDR_1) = 0x33333333;//A0-A7
-  GPIO_CTL0(ADDR_1) = (GPIO_CTL0(ADDR_1)&0xFFFF) + 0x33330000;//A12-A15
-  GPIO_CTL1(ADDR_2) = (GPIO_CTL1(ADDR_2)&0xFFFF0000) + 0x3333;//A8-A11
-  GPIO_CTL1(ADDR_3) = 0x33333333;
+  setAddrOutMode();
+  setDataOutMode();
 
   // Output a LOW signal on CE_FLASH(PH0)
   gpio_bit_reset(CTRLGBA,CS_SRAM);
@@ -1321,17 +1287,14 @@ boolean blankcheckFLASH_GBA (unsigned long flashSize)
   gpio_bit_set(CTRLGBA,GBA_WR|CS_ROM);
 
   // Set address ports to output
-  GPIO_CTL1(ADDR_1) = 0x33333333;//A0-A7
-  GPIO_CTL0(ADDR_1) = (GPIO_CTL0(ADDR_1)&0xFFFF) + 0x33330000;//A12-A15
-  GPIO_CTL1(ADDR_2) = (GPIO_CTL1(ADDR_2)&0xFFFF0000) + 0x3333;//A8-A11
+  setAddrOutMode();
   // Set address to 0
-  GPIO_OCTL(ADDR_1) = (GPIO_OCTL(ADDR_1)&0xFFFF000F);
-  GPIO_OCTL(ADDR_2) = (GPIO_OCTL(ADDR_2)&0xFFFFF0FF);
+  setAddr(0, false);
+  //GPIO_OCTL(ADDR_1) = (GPIO_OCTL(ADDR_1)&0xFFFF000F);
+  //GPIO_OCTL(ADDR_2) = (GPIO_OCTL(ADDR_2)&0xFFFFF0FF);
 
   // Set data pins to input
-  GPIO_CTL1(ADDR_3) = 0x44444444;
-  // Disable Pullups
-  //PORTC = 0x00;
+  setDataInMode();
 
   boolean blank = 1;
 
@@ -1374,10 +1337,8 @@ void switchBank_GBA(byte bankNum)
 
   // Set address ports to output
   // Set data pins to output
-  GPIO_CTL1(ADDR_1) = 0x33333333;//A0-A7
-  GPIO_CTL0(ADDR_1) = (GPIO_CTL0(ADDR_1)&0xFFFF) + 0x33330000;//A12-A15
-  GPIO_CTL1(ADDR_2) = (GPIO_CTL1(ADDR_2)&0xFFFF0000) + 0x3333;//A8-A11
-  GPIO_CTL1(ADDR_3) = 0x33333333;
+  setAddrOutMode();
+  setDataOutMode();
 
   // Output a LOW signal on CE_FLASH(PH0)
   gpio_bit_reset(CTRLGBA,CS_SRAM);
@@ -1398,15 +1359,12 @@ void readFLASH_GBA (boolean browseFile, unsigned long flashSize, uint32_t pos)
   gpio_bit_set(CTRLGBA,GBA_WR|CS_ROM);
 
   // Set address ports to output
-  GPIO_CTL1(ADDR_1) = 0x33333333;//A0-A7
-  GPIO_CTL0(ADDR_1) = (GPIO_CTL0(ADDR_1)&0xFFFF) + 0x33330000;//A12-A15
-  GPIO_CTL1(ADDR_2) = (GPIO_CTL1(ADDR_2)&0xFFFF0000) + 0x3333;//A8-A11
+  setAddrOutMode();
   // Set address to 0
-  GPIO_OCTL(ADDR_1) = (GPIO_OCTL(ADDR_1)&0xFFFF000F);
-  GPIO_OCTL(ADDR_2) = (GPIO_OCTL(ADDR_2)&0xFFFFF0FF);
+  setAddr(0x0, false);
 
   // Set data pins to input
-  GPIO_CTL1(ADDR_3) = 0x44444444;
+  setDataInMode();
 
   if (browseFile) 
   {
@@ -1451,7 +1409,7 @@ void readFLASH_GBA (boolean browseFile, unsigned long flashSize, uint32_t pos)
   for (unsigned long currAddress = 0; currAddress < flashSize; currAddress += 512) 
   {
     LED_RED_BLINK;
-    showPersent(currAddress,flashSize,20,3);
+    showPercent(currAddress,flashSize,20,3);
     for (int c = 0; c < 512; c++) 
     {
       // Read byte
@@ -1463,7 +1421,7 @@ void readFLASH_GBA (boolean browseFile, unsigned long flashSize, uint32_t pos)
 
 
   }
-  showPersent(1,1,20,3);
+  showPercent(1,1,20,3);
   f_close(&tf);
 
   // Set CS_FLASH(PH0) high
@@ -1473,11 +1431,10 @@ void readFLASH_GBA (boolean browseFile, unsigned long flashSize, uint32_t pos)
   OledShowString(20,4,"Done!",8);
 }
 
-
 void busyCheck_GBA(int currByte) 
 {
   // Set data pins to input
-  GPIO_CTL1(ADDR_3) = 0x44444444;
+  setDataInMode();
   // Output a LOW signal on OE_FLASH(PH6)
   gpio_bit_reset(CTRLGBA,GBA_RD);
   // Read PINC
@@ -1487,7 +1444,7 @@ void busyCheck_GBA(int currByte)
   // Output a HIGH signal on OE_FLASH(PH6)
   gpio_bit_set(CTRLGBA,GBA_RD);
   // Set data pins to output
-  GPIO_CTL1(ADDR_3) = 0x33333333;
+  setDataOutMode();
 }
 
 void writeFLASH_GBA (boolean browseFile, unsigned long flashSize, uint32_t pos)
@@ -1497,18 +1454,13 @@ void writeFLASH_GBA (boolean browseFile, unsigned long flashSize, uint32_t pos)
 
   // Set address ports to output
   // Set data port to output
-  GPIO_CTL1(ADDR_1) = 0x33333333;//A0-A7
-  GPIO_CTL0(ADDR_1) = (GPIO_CTL0(ADDR_1)&0xFFFF) + 0x33330000;//A12-A15
-  GPIO_CTL1(ADDR_2) = (GPIO_CTL1(ADDR_2)&0xFFFF0000) + 0x3333;//A8-A11
-  GPIO_CTL1(ADDR_3) = 0x33333333;
+  setAddrOutMode();
+  setDataOutMode();
 
   if (browseFile) 
   {
     filePath[0] = '\0';
     fileBrowser("/","Select fla file");
-    // Create filepath
-    sprintf(filePath, "%s/%s", filePath, fileName);
-    OledClear();
   }
 
   OledShowString(0,0,"Writing flash...",8);
@@ -1566,12 +1518,10 @@ void verifyFLASH_GBA(unsigned long flashSize, uint32_t pos)
   gpio_bit_set(CTRLGBA,GBA_WR|CS_ROM);
 
   // Set address ports to output
-  GPIO_CTL1(ADDR_1) = 0x33333333;//A0-A7
-  GPIO_CTL0(ADDR_1) = (GPIO_CTL0(ADDR_1)&0xFFFF) + 0x33330000;//A12-A15
-  GPIO_CTL1(ADDR_2) = (GPIO_CTL1(ADDR_2)&0xFFFF0000) + 0x3333;//A8-A11
+  setAddrOutMode();
 
   // Set data pins to input
-  GPIO_CTL1(ADDR_3) = 0x44444444;
+  setDataInMode();
 
   // Output a LOW signal on CE_FLASH(PH0) and  OE_FLASH(PH6)
   gpio_bit_reset(CTRLGBA,CS_SRAM|GBA_RD);
@@ -1621,9 +1571,6 @@ void verifyFLASH_GBA(unsigned long flashSize, uint32_t pos)
     print_Error(tmsg, false);
   }
 }
-
-
-
 
 /******************************************
   GBA REPRO Functions (32MB Intel 4000L0YBQ0 and 16MB MX29GL128E)
@@ -1746,7 +1693,6 @@ void idFlashrom_GBA()
       sprintf(tmsg,"Error!\nUnknown Flash!\nFlash ID: %s",flashid);
       OledShowString(0,0,tmsg,8);
       print_Error("Check voltage?", true);
-      
     }
   }
 
@@ -1794,7 +1740,7 @@ void eraseIntel4000_GBA()
     }
 
     LED_RED_BLINK;
-    showPersent(currBlock,lastBlock,70,2);
+    showPercent(currBlock,lastBlock,70,2);
   }
 
   // Erase 126 blocks with 64kwords each
@@ -1815,10 +1761,10 @@ void eraseIntel4000_GBA()
     }
     // Blink led
     LED_RED_BLINK;
-    showPersent(currBlock,lastBlock,70,2);
+    showPercent(currBlock,lastBlock,70,2);
   }
 
-  showPersent(1,1,70,2);
+  showPercent(1,1,70,2);
 
   // Erase the second chip
   if (fileSize > 0x1000000) {
@@ -1886,7 +1832,7 @@ void eraseIntel4400_GBA()
     }
 
     LED_RED_BLINK;
-    showPersent(currBlock,lastBlock,70,2);
+    showPercent(currBlock,lastBlock,70,2);
   }
 
   // Erase 255 blocks with 64kwords each
@@ -1907,10 +1853,10 @@ void eraseIntel4400_GBA()
     }
     // Blink led
     LED_RED_BLINK;
-    showPersent(currBlock,lastBlock,70,2);
+    showPercent(currBlock,lastBlock,70,2);
   }
 
-  showPersent(1,1,70,2);
+  showPercent(1,1,70,2);
 
   /* No need to erase the second chip as max rom size is 32MB
     if (fileSize > 0x2000000) {
@@ -1954,46 +1900,42 @@ void eraseIntel4400_GBA()
     }*/
 }
 
-#define deley_us_lv128 (1)
-
 void sectorEraseMSP55LV128_GBA(unsigned long lastSector) 
 {
   // Erase 256 sectors with 64kbytes each
   unsigned long currSector;
   for (currSector = 0x0; currSector < lastSector; currSector += 0x10000) {
     writeWord_GAB(0xAAA, 0xAA);
-    delayMicroseconds(deley_us_lv128);   
+    delayMicroseconds(1);   
     writeWord_GAB(0x555, 0x55);
-    delayMicroseconds(deley_us_lv128);   
+    delayMicroseconds(1);   
     writeWord_GAB(0xAAA, 0x80);
-    delayMicroseconds(deley_us_lv128);   
+    delayMicroseconds(1);   
     writeWord_GAB(0xAAA, 0xAA);
-    delayMicroseconds(deley_us_lv128);   
+    delayMicroseconds(1);   
     writeWord_GAB(0x555, 0x55);
-    delayMicroseconds(deley_us_lv128);     
+    delayMicroseconds(1);     
     writeWord_GAB(currSector, 0x30);
-    delayMicroseconds(deley_us_lv128);    
+    delayMicroseconds(1);    
 
     // Blink LED
     LED_RED_BLINK;
-    showPersent(currSector,lastSector,68,2);
+    showPercent(currSector,lastSector,68,2);
 
     // Read the status register
     word statusReg = readWord_GAB(currSector);
     while ((statusReg | 0xFF7F) != 0xFFFF) {
     
-      delayMicroseconds(deley_us_lv128);        
+      delayMicroseconds(1);        
       statusReg = readWord_GAB(currSector);
     }
 
-    delayMicroseconds(deley_us_lv128); 
+    delayMicroseconds(1); 
 
   }
 
-   showPersent(1,1,68,2);
+   showPercent(1,1,68,2);
 }
-
-
 
 void sectorEraseTest_GBA(unsigned long lastSector) 
 {
@@ -2001,38 +1943,36 @@ void sectorEraseTest_GBA(unsigned long lastSector)
   unsigned long currSector;
   for (currSector = 0x0; currSector < lastSector; currSector += 0x10000) {
     writeWord_GAB(0xAAA, 0xAA);
-    delayMicroseconds(deley_us_lv128);   
+    delayMicroseconds(1);   
     writeWord_GAB(0x555, 0x55);
-    delayMicroseconds(deley_us_lv128);   
+    delayMicroseconds(1);   
     writeWord_GAB(0xAAA, 0x80);
-    delayMicroseconds(deley_us_lv128);   
+    delayMicroseconds(1);   
     writeWord_GAB(0xAAA, 0xAA);
-    delayMicroseconds(deley_us_lv128);   
+    delayMicroseconds(1);   
     writeWord_GAB(0x555, 0x55);
-    delayMicroseconds(deley_us_lv128);     
+    delayMicroseconds(1);     
     writeWord_GAB(currSector, 0x30);
-    delayMicroseconds(deley_us_lv128);    
+    delayMicroseconds(1);    
 
     // Blink LED
     LED_RED_BLINK;
-    showPersent(currSector,lastSector,88,4);
+    showPercent(currSector,lastSector,88,4);
 
     // Read the status register
     word statusReg = readWord_GAB(currSector);
     while ((statusReg | 0xFF7F) != 0xFFFF) {
     
-      delayMicroseconds(deley_us_lv128);        
+      delayMicroseconds(1);        
       statusReg = readWord_GAB(currSector);
     }
 
-    delayMicroseconds(deley_us_lv128); 
+    delayMicroseconds(1); 
 
   }
 
-   showPersent(1,1,88,4);
+   showPercent(1,1,88,4);
 }
-
-
 
 void sectorEraseMX29GL128E_GBA(unsigned long lastSector) 
 {
@@ -2047,7 +1987,7 @@ void sectorEraseMX29GL128E_GBA(unsigned long lastSector)
     writeWord_GAB(currSector, 0x30);
     // Blink LED
     LED_RED_BLINK;
-    showPersent(currSector,lastSector,68,2);
+    showPercent(currSector,lastSector,68,2);
     // Read the status register
     word statusReg = readWord_GAB(currSector);
     while ((statusReg | 0xFF7F) != 0xFFFF) {
@@ -2056,9 +1996,8 @@ void sectorEraseMX29GL128E_GBA(unsigned long lastSector)
 
   }
 
-  showPersent(1,1,68,2);
+  showPercent(1,1,68,2);
 }
-
 
 void sectorEraseSpansion_GBA(unsigned long lastSector) 
 {
@@ -2073,13 +2012,13 @@ void sectorEraseSpansion_GBA(unsigned long lastSector)
     writeWord_GBA(currSector, 0x30);
     // Blink LED
     LED_RED_BLINK;
-    showPersent(currSector,lastSector,68,2);
+    showPercent(currSector,lastSector,68,2);
     // Read the status register
     word statusReg = readWord_GBA(currSector);
     while ((statusReg | 0xFF7F) != 0xFFFF) {
       statusReg = readWord_GBA(currSector);
     }
-    showPersent(1,1,68,2);
+    showPercent(1,1,68,2);
   }
 }
 
@@ -2096,14 +2035,14 @@ void sectorEraseMX29GL128E_GBA_1(unsigned long lastSector)
     writeWord_GAB(currSector, 0x30);
     // Blink LED
     LED_RED_BLINK;
-    showPersent(currSector,lastSector,68,2);
+    showPercent(currSector,lastSector,68,2);
     // Read the status register
     word statusReg = readWord_GAB(currSector);
     while ((statusReg | 0xFF7F) != 0xFFFF) {
       statusReg = readWord_GAB(currSector);
     }
   }
-  showPersent(1,1,68,2);
+  showPercent(1,1,68,2);
 }
 
 void writeIntel4000_GBA(FIL * ptf) 
@@ -2112,7 +2051,7 @@ void writeIntel4000_GBA(FIL * ptf)
   {
     // Blink led
     LED_BLUE_BLINK;
-    showPersent(currBlock,fileSize,68,3);
+    showPercent(currBlock,fileSize,68,3);
     // Write to flashrom
     for (unsigned long currSdBuffer = 0; currSdBuffer < 0x20000; currSdBuffer += 512) 
     {
@@ -2157,13 +2096,8 @@ void writeIntel4000_GBA(FIL * ptf)
       }
     }
   }
-  showPersent(1,1,68,3);
+  showPercent(1,1,68,3);
 }
-
-
-
-
-
 
 void writeMSP55LV128_GBA(FIL * ptf) 
 {
@@ -2172,7 +2106,7 @@ void writeMSP55LV128_GBA(FIL * ptf)
   {
     // Blink led
     LED_BLUE_BLINK;
-    showPersent(currSector,fileSize,68,3);
+    showPercent(currSector,fileSize,68,3);
     // Write to flashrom
     for (unsigned long currSdBuffer = 0; currSdBuffer < 0x10000; currSdBuffer += 512) 
     {
@@ -2187,11 +2121,11 @@ void writeMSP55LV128_GBA(FIL * ptf)
         _reProgram:
         // Write Buffer command
         writeWord_GAB(0xAAA, 0xAA);
-        delayMicroseconds(deley_us_lv128);
+        delayMicroseconds(1);
         writeWord_GAB(0x555, 0x55);
-        delayMicroseconds(deley_us_lv128);
+        delayMicroseconds(1);
         writeWord_GAB(currSector, 0x25);
-        delayMicroseconds(deley_us_lv128);
+        delayMicroseconds(1);
 
         // Write word count (minus 1)
         writeWord_GAB(currSector, 0xF);
@@ -2202,16 +2136,16 @@ void writeMSP55LV128_GBA(FIL * ptf)
         {
           // Join two bytes into one word
           //delay_GBA();
-          delayMicroseconds(deley_us_lv128);
+          delayMicroseconds(1);
           currWord = ((word *)sdBuffer)[(currWriteBuffer>>1) + currByte];
           writeWord_GBA(currSector + currSdBuffer + currWriteBuffer + currByte*2, currWord);
         }
 
-        //delayMicroseconds(deley_us_lv128);
-        delayMicroseconds(deley_us_lv128);
+        //delayMicroseconds(1);
+        delayMicroseconds(1);
         // Confirm write buffer
         writeWord_GAB(currSector, 0x29);
-        delayMicroseconds(deley_us_lv128);
+        delayMicroseconds(1);
 
 
 
@@ -2222,7 +2156,7 @@ void writeMSP55LV128_GBA(FIL * ptf)
         while ((statusReg | 0xFF7F) != (currWord | 0xFF7F)) 
         {
           //delay(1);//Microseconds(600);)
-          delayMicroseconds(deley_us_lv128);          
+          delayMicroseconds(1);          
           statusReg = readWord_GAB(currSector + currSdBuffer + currWriteBuffer + 30);
 
 
@@ -2239,7 +2173,7 @@ void writeMSP55LV128_GBA(FIL * ptf)
           {
             
             statusReg = readWord_GAB(currSector + currSdBuffer + currWriteBuffer + 30);
-            delayMicroseconds(deley_us_lv128);
+            delayMicroseconds(1);
             
             if((statusReg | 0xFF7F) != (currWord | 0xFF7F))
             {
@@ -2250,9 +2184,9 @@ void writeMSP55LV128_GBA(FIL * ptf)
                 //writeWord_GAB(0, 0xF0);
                                 //write buffer abort reset
                 writeWord_GAB(0xAAA, 0xAA);
-                delayMicroseconds(deley_us_lv128);
+                delayMicroseconds(1);
                 writeWord_GAB(0x555, 0x55);
-                delayMicroseconds(deley_us_lv128);
+                delayMicroseconds(1);
                 writeWord_GAB(0xAAA, 0xF0);
 
                 delay(1000);
@@ -2266,9 +2200,9 @@ void writeMSP55LV128_GBA(FIL * ptf)
               {
                 //write buffer abort reset
                 writeWord_GAB(0xAAA, 0xAA);
-                delayMicroseconds(deley_us_lv128);
+                delayMicroseconds(1);
                 writeWord_GAB(0x555, 0x55);
-                delayMicroseconds(deley_us_lv128);
+                delayMicroseconds(1);
                 writeWord_GAB(0xAAA, 0xF0);
 
                 delay(2000);
@@ -2287,7 +2221,7 @@ void writeMSP55LV128_GBA(FIL * ptf)
           }
         }
 
-        delayMicroseconds(deley_us_lv128); 
+        delayMicroseconds(1); 
 
 
       }
@@ -2295,11 +2229,8 @@ void writeMSP55LV128_GBA(FIL * ptf)
       //delay(1);
     }
   }
-  showPersent(1,1,68,3);
+  showPercent(1,1,68,3);
 }
-
-
-
 
 void writeMX29GL128E_GBA(FIL * ptf) 
 {
@@ -2307,7 +2238,7 @@ void writeMX29GL128E_GBA(FIL * ptf)
   {
     // Blink led
     LED_BLUE_BLINK;
-    showPersent(currSector,fileSize,68,3);
+    showPercent(currSector,fileSize,68,3);
     // Write to flashrom
     for (unsigned long currSdBuffer = 0; currSdBuffer < 0x20000; currSdBuffer += 512) 
     {
@@ -2351,7 +2282,7 @@ void writeMX29GL128E_GBA(FIL * ptf)
       }
     }
   }
-  showPersent(1,1,68,3);
+  showPercent(1,1,68,3);
 }
 
 void writeMX29GL128E_GBA_1(FIL * ptf) 
@@ -2360,7 +2291,7 @@ void writeMX29GL128E_GBA_1(FIL * ptf)
   {
     // Blink led
     LED_BLUE_BLINK;
-    showPersent(currSector,fileSize,68,3);
+    showPercent(currSector,fileSize,68,3);
     // Write to flashrom
     for (unsigned long currSdBuffer = 0; currSdBuffer < 0x10000; currSdBuffer += 512) 
     {
@@ -2391,7 +2322,7 @@ void writeMX29GL128E_GBA_1(FIL * ptf)
       }
     }
   }
-  showPersent(1,1,68,3);
+  showPercent(1,1,68,3);
 }
 
 void writeSpansion_GBA(FIL * ptf) 
@@ -2400,7 +2331,7 @@ void writeSpansion_GBA(FIL * ptf)
   {
     // Blink led
     LED_BLUE_BLINK;
-    showPersent(currSector,fileSize,68,3);
+    showPercent(currSector,fileSize,68,3);
     // Write to flashrom
     for (unsigned long currSdBuffer = 0; currSdBuffer < 0x20000; currSdBuffer += 512) 
     {
@@ -2413,11 +2344,11 @@ void writeSpansion_GBA(FIL * ptf)
         _reProgram:
         // Write Buffer command
         writeWord_GBA(0xAAA, 0xAA);
-        delayMicroseconds(deley_us_lv128);
+        delayMicroseconds(1);
         writeWord_GBA(0x555, 0x55);
-        delayMicroseconds(deley_us_lv128);
+        delayMicroseconds(1);
         writeWord_GBA(currSector, 0x25);
-        delayMicroseconds(deley_us_lv128);
+        delayMicroseconds(1);
 
         // Write word count (minus 1)
         writeWord_GBA(currSector, 0xF);
@@ -2427,27 +2358,27 @@ void writeSpansion_GBA(FIL * ptf)
         for (byte currByte = 0; currByte < 16; currByte++) 
         {
           // Join two bytes into one word
-          delayMicroseconds(deley_us_lv128);
+          delayMicroseconds(1);
           currWord = ((word *)sdBuffer)[(currWriteBuffer>>1) + currByte];
           writeWord_GBA(currSector + currSdBuffer + currWriteBuffer + currByte*2, currWord);
         }
 
         // Confirm write buffer
-        delayMicroseconds(deley_us_lv128);
-        delayMicroseconds(deley_us_lv128);
+        delayMicroseconds(1);
+        delayMicroseconds(1);
         writeWord_GBA(currSector, 0x29);
-        delayMicroseconds(deley_us_lv128);
-        delayMicroseconds(deley_us_lv128);
+        delayMicroseconds(1);
+        delayMicroseconds(1);
 
         // Read the status register
         word statusReg = readWord_GBA(currSector + currSdBuffer + currWriteBuffer + 30);
 
         while ((statusReg | 0xFF7F) != (currWord | 0xFF7F)) {
-          delayMicroseconds(deley_us_lv128);
+          delayMicroseconds(1);
           if(statusReg&0x22)
           {
             statusReg = readWord_GBA(currSector + currSdBuffer + currWriteBuffer + 30);
-            delayMicroseconds(deley_us_lv128);
+            delayMicroseconds(1);
             
             if((statusReg | 0xFF7F) != (currWord | 0xFF7F))
             {
@@ -2456,9 +2387,9 @@ void writeSpansion_GBA(FIL * ptf)
               {
                 //write buffer abort reset
                 writeWord_GBA(0xAAA, 0xAA);
-                delayMicroseconds(deley_us_lv128);
+                delayMicroseconds(1);
                 writeWord_GBA(0x555, 0x55);
-                delayMicroseconds(deley_us_lv128);
+                delayMicroseconds(1);
                 writeWord_GBA(0xAAA, 0xF0);
 
                 delay(1000);
@@ -2472,9 +2403,9 @@ void writeSpansion_GBA(FIL * ptf)
               {
                 //write buffer abort reset
                 writeWord_GBA(0xAAA, 0xAA);
-                delayMicroseconds(deley_us_lv128);
+                delayMicroseconds(1);
                 writeWord_GBA(0x555, 0x55);
-                delayMicroseconds(deley_us_lv128);
+                delayMicroseconds(1);
                 writeWord_GBA(0xAAA, 0xF0);
 
                 delay(1000);
@@ -2492,11 +2423,11 @@ void writeSpansion_GBA(FIL * ptf)
             statusReg = readWord_GBA(currSector + currSdBuffer + currWriteBuffer + 30);
           }
         }
-        delayMicroseconds(deley_us_lv128); 
+        delayMicroseconds(1); 
       }
     }
   }
-  showPersent(1,1,68,3);
+  showPercent(1,1,68,3);
 }
 
 boolean verifyFlashrom_GBA() 
@@ -2511,7 +2442,7 @@ boolean verifyFlashrom_GBA()
     {
       // Blink led
       LED_GREEN_BLINK;
-      showPersent(currSector,fileSize,82,6);
+      showPercent(currSector,fileSize,82,6);
       for (unsigned long currSdBuffer = 0; currSdBuffer < 131072; currSdBuffer += 512) 
       {
         // Fill SD buffer
@@ -2535,7 +2466,7 @@ boolean verifyFlashrom_GBA()
       }
     }
 
-    showPersent(1,1,82,6);
+    showPercent(1,1,82,6);
     // Close the file:
     f_close(&tf);
     if (writeErrors == 0) {
@@ -2566,7 +2497,7 @@ boolean verifyFlashrom_GBA_new()
     {
       // Blink led
       LED_GREEN_BLINK;
-      showPersent(currSector,fileSize,82,5);
+      showPercent(currSector,fileSize,82,5);
       for (unsigned long currSdBuffer = 0; currSdBuffer < 131072; currSdBuffer += 512) 
       {
         // Fill SD buffer
@@ -2587,7 +2518,7 @@ boolean verifyFlashrom_GBA_new()
       }
     }
 
-    showPersent(1,1,82,5);
+    showPercent(1,1,82,5);
     // Close the file:
     f_close(&tf);
     if (writeErrors == 0) {
@@ -2604,8 +2535,6 @@ boolean verifyFlashrom_GBA_new()
   }
 }
 
-
-
 boolean verifyFlashromTest_GBA(uint32_t testSize) 
 {
   word wWord = 0;
@@ -2614,7 +2543,7 @@ boolean verifyFlashromTest_GBA(uint32_t testSize)
   {
     // Blink led
     LED_GREEN_BLINK;
-    showPersent(currSector,fileSize,96,6);
+    showPercent(currSector,fileSize,96,6);
     for (unsigned long currSdBuffer = 0; currSdBuffer < 131072; currSdBuffer += 512) 
     {
       readWord_buf_GBA(currSector + currSdBuffer,tbuf,256);
@@ -2629,7 +2558,7 @@ boolean verifyFlashromTest_GBA(uint32_t testSize)
       }
     }
   }
-  showPersent(1,1,96,6);
+  showPercent(1,1,96,6);
   if (wErrors == 0) {
     return 1;
   }
@@ -2637,8 +2566,6 @@ boolean verifyFlashromTest_GBA(uint32_t testSize)
     return 0;
   }
 }
-
-
 
 void flashRepro_GBA() 
 {
@@ -2875,7 +2802,7 @@ void flashRepro_GBA()
       */
 
 
-      use_tick = (getSystick() - use_tick)/1055;
+      use_tick = (getSystick() - use_tick)/1000;
       sprintf(tmsg,"Use Time: %d(s)",use_tick);
       OledShowString(10,6,tmsg,8);
     }
@@ -2891,11 +2818,6 @@ void flashRepro_GBA()
   }
 }
 
-
-
-
-
-
 void writeTEST_GBA(uint32_t testSize) 
 {
 
@@ -2903,7 +2825,7 @@ void writeTEST_GBA(uint32_t testSize)
   {
     // Blink led
     LED_BLUE_BLINK;
-    showPersent(currSector,testSize,88,5);
+    showPercent(currSector,testSize,88,5);
     word wWord = 0;
     word tw = 0;
 
@@ -2913,11 +2835,11 @@ void writeTEST_GBA(uint32_t testSize)
         _reProgram:
         // Write Buffer command
         writeWord_GAB(0xAAA, 0xAA);
-        delayMicroseconds(deley_us_lv128);
+        delayMicroseconds(1);
         writeWord_GAB(0x555, 0x55);
-        delayMicroseconds(deley_us_lv128);
+        delayMicroseconds(1);
         writeWord_GAB(currSector, 0x25);
-        delayMicroseconds(deley_us_lv128);
+        delayMicroseconds(1);
 
         // Write word count (minus 1)
         writeWord_GAB(currSector, 0xF);
@@ -2926,19 +2848,19 @@ void writeTEST_GBA(uint32_t testSize)
         for (byte currByte = 0; currByte < 32; currByte+=2) 
         {
           // Join two bytes into one word
-          delayMicroseconds(deley_us_lv128);
+          delayMicroseconds(1);
           tw = wWord;
           writeWord_GBA(currSector + currSdBuffer + currByte, wWord);
           wWord++;  
         }
 
-        delayMicroseconds(deley_us_lv128);
-        delayMicroseconds(deley_us_lv128);
+        delayMicroseconds(1);
+        delayMicroseconds(1);
         // Confirm write buffer
         writeWord_GAB(currSector, 0x29);
 
-        delayMicroseconds(deley_us_lv128);
-        delayMicroseconds(deley_us_lv128);
+        delayMicroseconds(1);
+        delayMicroseconds(1);
 
 
         // Read the status register
@@ -2948,11 +2870,11 @@ void writeTEST_GBA(uint32_t testSize)
 
         while ((statusReg | 0xFF7F) != (tw | 0xFF7F)) 
         {
-          delayMicroseconds(deley_us_lv128);          
+          delayMicroseconds(1);          
           if(statusReg&0x22)
           {            
             statusReg = readWord_GAB(currSector + currSdBuffer + 30);
-            delayMicroseconds(deley_us_lv128);
+            delayMicroseconds(1);
             
             if((statusReg | 0xFF7F) != (tw | 0xFF7F))
             {
@@ -2960,9 +2882,9 @@ void writeTEST_GBA(uint32_t testSize)
               if(statusReg&0x20)
               {
                 writeWord_GAB(0xAAA, 0xAA);
-                delayMicroseconds(deley_us_lv128);
+                delayMicroseconds(1);
                 writeWord_GAB(0x555, 0x55);
-                delayMicroseconds(deley_us_lv128);
+                delayMicroseconds(1);
                 writeWord_GAB(0xAAA, 0xF0);
 
                 delay(1000);
@@ -2976,9 +2898,9 @@ void writeTEST_GBA(uint32_t testSize)
               {
                 //write buffer abort reset
                 writeWord_GAB(0xAAA, 0xAA);
-                delayMicroseconds(deley_us_lv128);
+                delayMicroseconds(1);
                 writeWord_GAB(0x555, 0x55);
-                delayMicroseconds(deley_us_lv128);
+                delayMicroseconds(1);
                 writeWord_GAB(0xAAA, 0xF0);
 
                 delay(1000);
@@ -2996,10 +2918,10 @@ void writeTEST_GBA(uint32_t testSize)
             statusReg = readWord_GAB(currSector + currSdBuffer + 30);
           }
         }
-        delayMicroseconds(deley_us_lv128); 
+        delayMicroseconds(1); 
       }
   }
-  showPersent(1,1,88,5);
+  showPercent(1,1,88,5);
 }
 
 void flashTest_GBA(uint32_t testSize) 
@@ -3040,8 +2962,6 @@ void flashTest_GBA(uint32_t testSize)
     print_Error("Check voltage?", true);
   }
 }
-
-
 
 /******************************************
    Setup
@@ -3121,10 +3041,6 @@ void setup_GBA()
   WaitOKBtn();
 }
 
-
-
-
-
 void TestMemGBA(boolean bFast)
 {
   //
@@ -3140,8 +3056,6 @@ void TestMemGBA(boolean bFast)
   WaitOKBtn();
   ResetSystem();
 }
-
-
 
 /******************************************
    Menu
@@ -3472,10 +3386,10 @@ uint8_t gbaMenu() {
             print_Error(tmsg, true);
           }
           eraseFLASH_GBA();
-          if (blankcheckFLASH_GBA(65536)) 
+          if (blankcheckFLASH_GBA(0x10000)) 
           {
-            writeFLASH_GBA(1, 65536, 0);
-            verifyFLASH_GBA(65536, 0);
+            writeFLASH_GBA(1, 0x10000, 0);
+            verifyFLASH_GBA(0x10000, 0);
           }
           else 
           {
@@ -3496,27 +3410,17 @@ uint8_t gbaMenu() {
           }
           eraseFLASH_GBA();
           // 131072 bytes are divided into two 65536 byte banks
-          switchBank_GBA(0x0);
-          setROM_GBA();
-          if (blankcheckFLASH_GBA(65536))
-          {
-            writeFLASH_GBA(1, 65536, 0);
-            verifyFLASH_GBA(65536, 0);
-          }
-          else 
-          {
-            print_Error("Erase failed!", false);
-          }
-          switchBank_GBA(0x1);
-          setROM_GBA();
-          if (blankcheckFLASH_GBA(65536)) 
-          {
-            writeFLASH_GBA(0, 65536, 65536);
-            verifyFLASH_GBA(65536, 65536);
-          }
-          else 
-          {
-            print_Error("Erase failed!", false);
+          for(int currbank = 0; currbank < 2; currbank++) {
+            switchBank_GBA(currbank);
+            setROM_GBA();
+            if (blankcheckFLASH_GBA(0x10000))
+            {
+              writeFLASH_GBA(1 - currbank, 0x10000, 0x10000*currbank);
+              verifyFLASH_GBA(0x10000, 0x10000*currbank);
+            } else {
+              print_Error("Erase failed!", false);
+            }
+            switchBank_GBA(0x1);
           }
           setROM_GBA();
           break;
@@ -3594,8 +3498,6 @@ uint8_t gbaMenu() {
   return  bret;
 }
 
-
-
 void gbaScreen()
 {
   //
@@ -3610,8 +3512,6 @@ void gbaScreen()
     }
   }
 }
-
-
 
 
 //******************************************

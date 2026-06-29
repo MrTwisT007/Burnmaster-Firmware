@@ -853,7 +853,7 @@ void draw_progressbar(uint32_t processed, uint32_t total, uint8_t line) {
 
 
 
-void showPersent(uint32_t processed, uint32_t total, uint8_t x, uint8_t line)
+void showPercent(uint32_t processed, uint32_t total, uint8_t x, uint8_t line)
 {
   //
   char szt[16] = {0};

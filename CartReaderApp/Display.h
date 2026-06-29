@@ -41,7 +41,7 @@ void OledInit(void);
 void setColor_RGB(uint8_t r, uint8_t g, uint8_t b);
 void print_Error(char *errorMessage, uint8_t forceReset);
 void draw_progressbar(uint32_t processed, uint32_t total, uint8_t line);
-void showPersent(uint32_t processed, uint32_t total, uint8_t x, uint8_t line);
+void showPercent(uint32_t processed, uint32_t total, uint8_t x, uint8_t line);
 
 
 

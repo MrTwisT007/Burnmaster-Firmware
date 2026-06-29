@@ -9,6 +9,7 @@ void save_dword(uint32_t data)
 {
   //
   fmc_unlock();
+  fmc_page_erase(FMC_WRITE_START_ADDR);
   fmc_word_program(FMC_WRITE_START_ADDR, data);
   //lock the main FMC after the program operation */
   fmc_lock();
@@ -17,8 +18,9 @@ void save_dword(uint32_t data)
 uint32_t load_dword()
 {
   //
-  uint32_t *ptr = (uint32_t *)FMC_WRITE_START_ADDR;
-  return  ptr[0];
+  //uint32_t *ptr = (volatile uint32_t *)FMC_WRITE_START_ADDR;
+  //return  ptr[0];
+  return *(volatile uint32_t *)(uint32_t)FMC_WRITE_START_ADDR;
 }
 
 

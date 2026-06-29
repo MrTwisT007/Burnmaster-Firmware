@@ -500,6 +500,9 @@ void PriInit()
 
   rcu_periph_clock_enable(RCU_AF);
   //gpio_pin_remap_config(GPIO_SWJ_SWDPENABLE_REMAP,ENABLE);
+  if (load_dword() == UINT32_MAX) {
+    save_dword(0);
+  }
   foldern = load_dword();
 }
 

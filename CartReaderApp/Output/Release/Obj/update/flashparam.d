@@ -1,0 +1,37 @@
+Output/Release/Obj/update/flashparam.o: \
+  D:\Software\Segger\ Embedded\ Studio\burnmaster_src\CartReaderApp\flashparam.c \
+  D:\Software\Segger\ Embedded\ Studio\include\stdio.h \
+  D:\Software\Segger\ Embedded\ Studio\include\__SEGGER_RTL.h \
+  D:\Software\Segger\ Embedded\ Studio\include\__SEGGER_RTL_ConfDefaults.h \
+  D:\Software\Segger\ Embedded\ Studio\include\__SEGGER_RTL_Conf.h \
+  D:\Software\Segger\ Embedded\ Studio\include\__SEGGER_RTL_Arm_Conf.h \
+  D:\Software\Segger\ Embedded\ Studio\include\string.h \
+  D:\Software\Segger\ Embedded\ Studio\burnmaster_src\CartReaderApp\GD32F10x\Device\Include\gd32f10x.h \
+  D:\Software\Segger\ Embedded\ Studio\burnmaster_src\CartReaderApp\CMSIS_5\CMSIS\Core\Include\core_cm3.h \
+  D:\Software\Segger\ Embedded\ Studio\include\stdint.h \
+  D:\Software\Segger\ Embedded\ Studio\burnmaster_src\CartReaderApp\CMSIS_5\CMSIS\Core\Include\cmsis_version.h \
+  D:\Software\Segger\ Embedded\ Studio\burnmaster_src\CartReaderApp\CMSIS_5\CMSIS\Core\Include\cmsis_compiler.h \
+  D:\Software\Segger\ Embedded\ Studio\burnmaster_src\CartReaderApp\CMSIS_5\CMSIS\Core\Include\cmsis_gcc.h \
+  D:\Software\Segger\ Embedded\ Studio\burnmaster_src\CartReaderApp\GD32F10x\Device\Include\system_gd32f10x.h \
+  D:\Software\Segger\ Embedded\ Studio\burnmaster_src\CartReaderApp\GD32F10x\Device\Include\gd32f10x_libopt.h \
+  D:\Software\Segger\ Embedded\ Studio\burnmaster_src\CartReaderApp\GD32F10x\Device\Include\RTE_Components.h \
+  D:\Software\Segger\ Embedded\ Studio\burnmaster_src\CartReaderApp\GD32F10x\Device\Include\gd32f10x_adc.h \
+  D:\Software\Segger\ Embedded\ Studio\burnmaster_src\CartReaderApp\GD32F10x\Device\Include\gd32f10x_can.h \
+  D:\Software\Segger\ Embedded\ Studio\burnmaster_src\CartReaderApp\GD32F10x\Device\Include\gd32f10x_crc.h \
+  D:\Software\Segger\ Embedded\ Studio\burnmaster_src\CartReaderApp\GD32F10x\Device\Include\gd32f10x_dac.h \
+  D:\Software\Segger\ Embedded\ Studio\burnmaster_src\CartReaderApp\GD32F10x\Device\Include\gd32f10x_dbg.h \
+  D:\Software\Segger\ Embedded\ Studio\burnmaster_src\CartReaderApp\GD32F10x\Device\Include\gd32f10x_dma.h \
+  D:\Software\Segger\ Embedded\ Studio\burnmaster_src\CartReaderApp\GD32F10x\Device\Include\gd32f10x_exti.h \
+  D:\Software\Segger\ Embedded\ Studio\burnmaster_src\CartReaderApp\GD32F10x\Device\Include\gd32f10x_fmc.h \
+  D:\Software\Segger\ Embedded\ Studio\burnmaster_src\CartReaderApp\GD32F10x\Device\Include\gd32f10x_fwdgt.h \
+  D:\Software\Segger\ Embedded\ Studio\burnmaster_src\CartReaderApp\GD32F10x\Device\Include\gd32f10x_gpio.h \
+  D:\Software\Segger\ Embedded\ Studio\burnmaster_src\CartReaderApp\GD32F10x\Device\Include\gd32f10x_i2c.h \
+  D:\Software\Segger\ Embedded\ Studio\burnmaster_src\CartReaderApp\GD32F10x\Device\Include\gd32f10x_misc.h \
+  D:\Software\Segger\ Embedded\ Studio\burnmaster_src\CartReaderApp\GD32F10x\Device\Include\gd32f10x_pmu.h \
+  D:\Software\Segger\ Embedded\ Studio\burnmaster_src\CartReaderApp\GD32F10x\Device\Include\gd32f10x_rcu.h \
+  D:\Software\Segger\ Embedded\ Studio\burnmaster_src\CartReaderApp\GD32F10x\Device\Include\gd32f10x_rtc.h \
+  D:\Software\Segger\ Embedded\ Studio\burnmaster_src\CartReaderApp\GD32F10x\Device\Include\gd32f10x_spi.h \
+  D:\Software\Segger\ Embedded\ Studio\burnmaster_src\CartReaderApp\GD32F10x\Device\Include\gd32f10x_timer.h \
+  D:\Software\Segger\ Embedded\ Studio\burnmaster_src\CartReaderApp\GD32F10x\Device\Include\gd32f10x_usart.h \
+  D:\Software\Segger\ Embedded\ Studio\burnmaster_src\CartReaderApp\GD32F10x\Device\Include\gd32f10x_wwdgt.h \
+  D:\Software\Segger\ Embedded\ Studio\burnmaster_src\CartReaderApp\flashparam.h

@@ -1,6 +1,6 @@
 <!DOCTYPE CrossStudio_Project_File>
 <solution Name="GDCartReader" target="8" version="2">
-  <project Name="GDCartReader">
+  <project Name="update">
     <configuration
       LIBRARY_IO_TYPE="RTT"
       Name="Common"
@@ -19,7 +19,7 @@
       arm_target_debug_interface_type="ADIv5"
       arm_target_device_name="GD32F103VC"
       arm_target_interface_type="SWD"
-      c_preprocessor_definitions="GD32F10X_HD USE_STDPERIPH_DRIVER;__GD32F10X_FAMILY;__GD32F103_SUBFAMILY;ARM_MATH_CM3;__NO_FPU_ENABLE"
+      c_preprocessor_definitions="GD32F10X_HD USE_STDPERIPH_DRIVER;__GD32F10X_FAMILY;__GD32F103_SUBFAMILY;ARM_MATH_CM3;__NO_FPU_ENABLE;__VTOR_CONFIG;__VECTORS_IN_RAM"
       c_user_include_directories="$(ProjectDir)/CMSIS_5/CMSIS/Core/Include;$(ProjectDir)/GD32F10x/Device/Include"
       debug_register_definition_file="$(ProjectDir)/GD32F10x_HD_Registers.xml"
       debug_stack_pointer_start="__stack_end__"

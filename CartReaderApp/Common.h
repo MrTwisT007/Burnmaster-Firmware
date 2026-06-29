@@ -23,7 +23,7 @@
 #define FILEOPTS_LENGTH 20
 
 
-extern int foldern;
+extern uint32_t foldern;
 extern char folder[36];
 extern FATFS fs;
 

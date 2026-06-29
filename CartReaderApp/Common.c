@@ -12,7 +12,7 @@ byte sdBuffer[512];
 
 
 //remember folder number to create a new folder for every save
-int foldern;
+uint32_t foldern;
 char folder[36];
 
 // File browser
@@ -62,13 +62,17 @@ static volatile int ticks = 0;
 void SysClockInit()
 {
   // Enable SysTick timer interrupt
+  //Sets timer to pulse every 108000 clock cycles (1ms)
   SysTick->LOAD = (SystemCoreClock / 1000) - 1;
+  //Reset SysTick counter
   SysTick->VAL = 0;
+  //Set SysTick clock source to CPU clock, enable the exception request and enable the counter
   SysTick->CTRL = SysTick_CTRL_CLKSOURCE_Msk | SysTick_CTRL_TICKINT_Msk | SysTick_CTRL_ENABLE_Msk;
 }
 
 void SysTick_Handler(void) 
 {
+  // Increment the ticks value every time the SysTick exception fires
   ticks++;
 }
 
@@ -78,9 +82,11 @@ int getSystick()
 }
 
 void delay(int n) {
+  // Wait for N ticks. This will not guarantee an accurate delay since this does not restart the SysTick timer
   unsigned endTicks = ticks + n;
+  SysTick->CTRL = ~SysTick_CTRL_CLKSOURCE_Msk | SysTick_CTRL_TICKINT_Msk | SysTick_CTRL_ENABLE_Msk;
+  SysTick->CTRL = SysTick_CTRL_CLKSOURCE_Msk | SysTick_CTRL_TICKINT_Msk | SysTick_CTRL_ENABLE_Msk;
   while (ticks < endTicks);
- 
 }
 
 void ResetSystem()
@@ -102,6 +108,10 @@ void delayMicroseconds(uint16_t us)
   //
   for(int i = 0;i<us;i++)
   {    
+    __asm__("nop\n\t""nop\n\t""nop\n\t""nop\n\t""nop\n\t");
+    __asm__("nop\n\t""nop\n\t""nop\n\t""nop\n\t""nop\n\t");
+    __asm__("nop\n\t""nop\n\t""nop\n\t""nop\n\t""nop\n\t");
+    __asm__("nop\n\t""nop\n\t""nop\n\t""nop\n\t""nop\n\t");
     __asm__("nop\n\t""nop\n\t""nop\n\t""nop\n\t""nop\n\t");
     __asm__("nop\n\t""nop\n\t""nop\n\t""nop\n\t""nop\n\t");
     __asm__("nop\n\t""nop\n\t""nop\n\t""nop\n\t""nop\n\t");

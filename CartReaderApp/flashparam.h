@@ -8,8 +8,8 @@ extern "C"{
 #endif /* __cplusplus */
  
  
-#define FMC_PAGE_SIZE           ((uint16_t)0x400U)
-#define FMC_WRITE_START_ADDR    ((uint32_t)0x0803FC00U)
+#define FMC_PAGE_SIZE           ((uint16_t)0x800U)
+#define FMC_WRITE_START_ADDR    ((uint32_t)0x08030000U)
 #define FMC_WRITE_END_ADDR	((uint32_t)0x0803FFFFU)
 
 

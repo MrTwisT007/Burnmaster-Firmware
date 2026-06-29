@@ -426,7 +426,7 @@ void writeFlash_GBM()
     {
       // Blink led
       LED_BLINK(LED1);
-      showPersent(currBank - 1,fileSize,60,0);
+      showPercent(currBank - 1,fileSize,60,0);
 
       // all following banks: 0x4000-0x7FFF
       if (currBank > 1) {
@@ -482,7 +482,7 @@ void writeFlash_GBM()
       }
     }
 
-    showPersent(1,1,60,0);
+    showPercent(1,1,60,0);
     // Close the file:
     f_close(&tf);
   }
