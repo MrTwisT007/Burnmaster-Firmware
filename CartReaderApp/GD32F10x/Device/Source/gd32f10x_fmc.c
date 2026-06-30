@@ -39,7 +39,7 @@ OF SUCH DAMAGE.
 
 /*!
     \brief      set the wait state counter value
-    \param[in]  wscnt£ºwait state counter value
+    \param[in]  wscntwait state counter value
       \arg        WS_WSCNT_0: FMC 0 wait state
       \arg        WS_WSCNT_1: FMC 1 wait state
       \arg        WS_WSCNT_2: FMC 2 wait state

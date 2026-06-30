@@ -289,8 +289,8 @@ typedef enum
 
 /* FMC BANK address */
 #define FMC_BANK0_END_ADDRESS      ((uint32_t)0x0807FFFFU)                       /*!< FMC bank0 end address */
-#define FMC_BANK0_SIZE             ((uint32_t)0x00000200U)                       /*!< FMC bank0 size */
-#define FMC_SIZE                   (*(uint16_t *)0x1FFFF7E0U)                    /*!< FMC size */
+#define FMC_BANK0_SIZE             ((uint32_t)0x00000100U)                       /*!< FMC bank0 size */
+#define FMC_SIZE                   ((*(uint16_t *)0x1FFFF7E0U)&0XFFFF)             /*!< FMC size */
 
 /* function declarations */
 /* FMC main memory programming functions */

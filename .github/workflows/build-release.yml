@@ -3,7 +3,7 @@ on:
   workflow_dispatch:
   push:
     branches:
-      - 'main'
+      - 'improvements'
 
 jobs:
   build:
@@ -24,9 +24,9 @@ jobs:
       - name: Compile Firmware
         run: |
             cd arm_segger_embedded_studio_v622a_linux_x64/bin
-            ./emBuild -config "Debug" ${{ github.workspace }}//Burnmaster-Firmware/CartReaderApp/GDCartReader.emProject
+            ./emBuild -config "Release" ${{ github.workspace }}//Burnmaster-Firmware/CartReaderApp/GDCartReader.emProject
           
       - uses: actions/upload-artifact@v4
         with:
           name: Burnmaster-Firmware
-          path: ${{ github.workspace }}//Burnmaster-Firmware/CartReaderApp/Output/Debug/Exe/GDCartReader.bin
+          path: ${{ github.workspace }}//Burnmaster-Firmware/CartReaderApp/Output/Release/Exe/update.bin
