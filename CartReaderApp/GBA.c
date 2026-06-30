@@ -1344,10 +1344,10 @@ void switchBank_GBA(byte bankNum)
   gpio_bit_reset(CTRLGBA,CS_SRAM);
 
   // Switch bank command sequence
-  writeByte_GBA(0x5555, 0xAA);
-  writeByte_GBA(0x2AAA, 0x55);
-  writeByte_GBA(0x5555, 0xB0);
-  writeByte_GBA(0x0000, bankNum);
+  writeByteFlash_GBA(0x5555, 0xAA);
+  writeByteFlash_GBA(0x2AAA, 0x55);
+  writeByteFlash_GBA(0x5555, 0xB0);
+  writeByteFlash_GBA(0x0000, bankNum);
 
   // Set CS_FLASH high
   gpio_bit_set(CTRLGBA,CS_SRAM);
@@ -1443,6 +1443,7 @@ void busyCheck_GBA(int currByte)
   }
   // Output a HIGH signal on OE_FLASH
   gpio_bit_set(CTRLGBA,GBA_RD);
+
   // Set data pins to output
   setDataOutMode();
 }
