@@ -93,13 +93,12 @@ void aboutScreen()
 {
   //
   OledClear();
-  OledShowString(0,0,(char *)("Portable"),16);
-  OledShowString(8,2,(char *)("Cart Flasher"),16);
-  // Version contains custom integration for Spansion S29GL128N | S29GL256N | S29GL512N
+  OledShowString(0,0,(char *)("BurnMaster"),16);
+  OledShowString(8,2,(char *)("Improved"),16);
   // Based on Funnyplaying 1.12 release
-  OledShowString(20,4,(char *)("Ver:1.12.C"),8);
-  OledShowString(20,5,(char *)("2025.3"),8);
-  OledShowString(20,6,(char *)("Orz Studio"),8);
+  OledShowString(20,4,(char *)("Ver:1.12.i"),8);
+  OledShowString(20,5,(char *)("2026.6"),8);
+  OledShowString(20,6,(char *)("Pew Pew Pew"),8);
 
   OledShowString(0,7,(char *)("Press OK Button..."),8);
 
@@ -530,7 +529,7 @@ int main(void)
   //   mainMenu();
   //}
 
-  delay(200);
+  delay(200000);
   gbxScreen();
 
   //

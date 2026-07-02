@@ -806,7 +806,7 @@ void print_Error(char *errorMessage, uint8_t forceReset) {
       ignoreError = 0;
       OledClear();
       OledShowString(0,2,"Error Overwrite",8);
-      delay(2000);
+      delay(2000000);
     }
   }
 }

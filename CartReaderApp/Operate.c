@@ -8,13 +8,21 @@
 #include "Operate.h"
 
 
-
+#define DEBOUNCE_US 10000
+#define REPEAT_INTERVAL 100
+#define REPEAT_PREDELAY 200
 
 /*********************************************************************
 *
 Keyboard
 
 */
+
+int buttonPressed = 0;
+bool isButtonHeld = false;
+unsigned char choice_ori = 0;
+
+
 void KeyBrdInit()
 {
   //
@@ -25,15 +33,45 @@ void KeyBrdInit()
 uint8_t keyState()
 {
   //
-  return GPIO_ISTAT(GPIOE)&(0x3F);
+  return (~GPIO_ISTAT(GPIOE))&0x3F;
 }
 
 
-uint8_t checkButton()
+uint8_t checkButton(int previousbutton)
 {
+  int ms_counter = 0;
   uint8_t keycode = keyState();
-  delay(44);
+  if (!isButtonHeld)
+    delay(DEBOUNCE_US);
 
+  //Button repeat loop
+  //Check if the previously pressed/held button is OK or CANCEL
+  if(previousbutton > 8) {
+    //If the pressed button matches the previous button, wait till the user lets go
+    while((keycode = keyState()) == previousbutton) {
+      delay(DEBOUNCE_US);
+    }
+  // Otherwise, repeat the button code at regular interval
+  } else if (previousbutton > 0) {
+    while(keyState() == previousbutton) {
+      delay(1000);
+      ms_counter++;
+      if(!isButtonHeld) {
+        if(ms_counter == REPEAT_PREDELAY) {
+          isButtonHeld = true;
+          break;
+        }
+      } else {
+        if(ms_counter == REPEAT_INTERVAL) {
+          break;
+        }
+      }
+    }
+  } else {
+    isButtonHeld = false;
+  }
+  
+  //Low battery indicator
   if(gpio_input_bit_get(GPIOB,GPIO_PIN_1) == RESET)
   {
     LED_RED_ON;
@@ -42,23 +80,20 @@ uint8_t checkButton()
   {
     LED_RED_OFF;
   }
-
-
-  if(keyState() != keycode)
+  
+  //If button is still held at this point, return the value
+  if(keyState() == keycode)
   {
-    return (~keycode)&0x3F;
+    return keycode&0x3F;
   }
-  else
-  {
-    return BTNNONE;
-  }
+
+  return BTNNONE;
 }
 
 
 void WaitOKBtn()
 {
-  //
-  while(checkButton() != BTNOK)
+  while((buttonPressed = checkButton(buttonPressed)) != BTNOK)
   {
     //delay(88);    
   }
@@ -66,28 +101,26 @@ void WaitOKBtn()
 
 
 
-// Display a question box with selectable answers. Make sure default choice is in (0, num_answers]
-unsigned char questionBox_OLED(char * question, const char* const answers[7], int num_answers, int default_choice, uint8_t rollselect, uint8_t clrSrc) 
+// Display a question box with selectable itemNames. Make sure default choice is in (0, numSelections]
+unsigned char questionBox_OLED(char * question, const char* const itemNames[7], int numSelections, int selection, uint8_t wrapAround, uint8_t clrSrc) 
 {
-  
-  
   //clear the screen
   if(clrSrc > 0)OledClear();
 
   // change the rgb led to the start menu color
-  //rgbLed(default_choice);
+  //rgbLed(selection);
 
   // print menu
   OledShowString(0,0,question,8);
   char tanswer[21] = {0};
-  for (unsigned char i = 0; i < num_answers; i++) {
-    memcpy(tanswer,answers[i],20);
+  for (unsigned char i = 0; i < numSelections; i++) {
+    memcpy(tanswer,itemNames[i],20);
     OledShowString(6,i+1,tanswer,8);
   }
 
   // start with the default choice
-  unsigned char choice = default_choice;
-  unsigned char choice_ori = default_choice;
+  unsigned char choice = selection;
+  choice_ori = selection;
 
   // draw selection box
   OledShowChar(0,choice,'*',8);
@@ -95,7 +128,6 @@ unsigned char questionBox_OLED(char * question, const char* const answers[7], in
   //unsigned long idleTime = millis();
   uint8_t currentColor = 0;
 
-  //
   uint32_t scroll_tick = 0;
   uint8_t scroll_start = 0;
 
@@ -119,15 +151,14 @@ unsigned char questionBox_OLED(char * question, const char* const answers[7], in
       }
       rgbLed(currentColor);
     }*/
-    int b = checkButton();
-    if(b==BTNNONE)
+    buttonPressed = checkButton(buttonPressed);
+    if(buttonPressed==BTNNONE)
     {
       //
       scroll_tick = scroll_tick + 1;
       if((scroll_tick > 14) && (scroll_tick%3 == 1))
       {
-        //
-        if(OledShowString(6,choice,answers[choice - 1] + scroll_start,8) > 0)
+        if(OledShowString(6,choice,itemNames[choice - 1] + scroll_start,8) > 0)
         {
           scroll_start++;
         }
@@ -135,80 +166,72 @@ unsigned char questionBox_OLED(char * question, const char* const answers[7], in
     }
     else
     {
-      printf("getKey-%d\n",b);
+      printf("getKey-%d\n",buttonPressed);
       scroll_tick = 0;
       scroll_start = 0;
     }
     
-    if(b==BTNLEFT)
+    if(buttonPressed==BTNLEFT)
     {
-      if(rollselect)
+      if(wrapAround)
       {}
       else{
-        //
         choice = MENU_PGUP;
         break;
       }
     }
     else
-    if (b == BTNRIGHT)
+    if (buttonPressed == BTNRIGHT)
     {
-      if(rollselect)
+      if(wrapAround)
       {}
       else{
-        //
         choice = MENU_PGDN;
         break;
       }
     }
     else
-    if (b == BTNUP)
+    if (buttonPressed == BTNUP)
     {
-      //
       choice--;
       if(choice <= 0)
       {
-        if(rollselect)
+        if(wrapAround)
         {
-          choice = num_answers;
+          choice = numSelections;
         }
         else
         {
-          //
           choice = MENU_UPUP;
           break;
         }
       }
     }
     else
-    if (b == BTNDOWN)
+    if (buttonPressed == BTNDOWN)
     {
-      //
       choice++;
-      if(choice > num_answers)
+      if(choice > numSelections)
       {
-        if(rollselect)
+        if(wrapAround)
         {
           choice = 1;
         }
         else
         {
-          //
           choice = MENU_DOWNDOWN;
           break;
         }
       }
     }
     else
-    if (b == BTNCANCEL)
+    if (buttonPressed == BTNCANCEL)
     {
-      //
       choice = MENU_CANCEL;
       break;
     }
     else 
-    if (b == BTNOK) {
-      //idleTime = millis();
+    if (buttonPressed == BTNOK) {
       break;
     }
   
@@ -217,18 +240,12 @@ unsigned char questionBox_OLED(char * question, const char* const answers[7], in
     {
       //
       OledShowChar(0,choice_ori,' ',8);
-      OledShowString(6,choice_ori,answers[choice_ori-1],8);
+      OledShowString(6,choice_ori,itemNames[choice_ori-1],8);
       OledShowChar(0,choice,'*',8);
       choice_ori=choice;
     }
-
-
-
-
   }
 
-  // pass on user choice
-  //setColor_RGB(0, 0, 0);
   return choice;
 }
 
@@ -313,372 +330,168 @@ char answer6[100];
 char answer7[100];
 char* tanswers[7] = {answer1,answer2,answer3,answer4,answer5,answer6,answer7};
 
-void fileBrowser(char * start_dir , const char * browserTitle) 
-{
+void fileBrowser(char * start_dir , const char * browserTitle) {
   
-  int currFile = 0;
-  int menucnt = 0;
+  uint8_t filecount = 0;
   // Init Dir
   strcpy(filePath,start_dir);
-  // Temporary char array for filename
-  char nameStr[128];
-  DIR tdir;
-  FRESULT fret;
   FILINFO finfo;
-  bool bnomore;
-  uint8_t mret;
-  uint8_t default_select;
+  DIR tdir;
+  
+  while(1){
+    filecount = populateFileList(tdir, finfo, (char *)browserTitle);
 
-
-browserstart:
-
-  // Print title
-  OledClear();
-  OledShowString(0,0,(char *)browserTitle,8);
-
-  // Set currFile back to 0
-  currFile = 0;
-  currPage = 1;
-  lastPage = 1;
-  bnomore = false;
-
-  // Open filepath directory
-  if (f_opendir(&tdir,filePath) != FR_OK) {
-    OledClear();
-    print_Error("SD Error", true);
-  }
-  f_chdir(filePath);
-
-next_page:
-
-  menucnt = 0;
-  while(1)
-  {
-    fret = f_readdir(&tdir,&finfo);
-    if(fret == FR_OK)
-    {
-      //到底了或者菜单填满了
-      if(finfo.fname[0] == 0x00)
-      {
-        //
-        bnomore = true;
-        break;
-      }
-
-      //if(finfo.altname[0])strcpy(fileNames[currFile],finfo.fname);else
-      strcpy(fileNames[currFile],finfo.fname);
-      strcpy(tanswers[menucnt],fileNames[currFile]);
-      currFile++;
-      menucnt++;
-      printf("\nfile:[%s]-[%s]",finfo.fname,finfo.altname);
-
-      
-      if(menucnt >= 7)
-      {
-        //
-        //lastPage++;
-        break;
-      }
+    if (!openBrowserMenu(tdir, finfo, filecount, (char *)browserTitle)) {
+      break;
     }
-    else break;
   }
+}
 
-  default_select = 1;
+uint8_t populateFileList(DIR tdir, FILINFO finfo, char * browserTitle) {
+  uint8_t filecount = 0;
 
-next_page1:
+  while(filecount == 0){
+    OledClear();
+    
+    // Open filepath directory
+    if (f_opendir(&tdir,filePath) != FR_OK) {
+      OledClear();
+      print_Error("SD Error", true);
+    }
+    f_chdir(filePath);
+    
+    while(f_readdir(&tdir,&finfo) == FR_OK) {
+      if(finfo.fname[0] == 0x00) {
+        if (filecount == 0) {
+          upOneDir(tdir);
+          OledClear();
+          OledShowString(16,3,"Empty directory",8);
+          OledShowString(8,6,"Press OK to return",8);
+          WaitOKBtn();
+        }
+        break;
+      }
+      strcpy(fileNames[filecount],finfo.fname);
+    
+      filecount++;
+    }
+  }
+  return filecount;
+}
 
-  mret = questionBox_OLED((char *)browserTitle,(const char **)tanswers,menucnt,default_select,0, 1);
-  switch(mret)
-  {
-    case MENU_CANCEL:
-    {
-      for(int i = sizeof(filePath) - 1;i>0;i--)
-      {
-        //
-        if(filePath[i] == '/'||filePath[i] == '\\')
-        {
-          //
-          filePath[i] = 0x00;
+bool openBrowserMenu(DIR tdir, FILINFO finfo, uint8_t filecount, char *browserTitle) {
+  uint8_t currPage = 0;
+  uint8_t default_select = 1;
+  uint8_t menucnt = 0;
+  uint8_t mret;
+  bool flipPage = false;
+  bool scrollPage = false;
+  bool changeDir = false;
+  bool onLastPage = false;
+  FIL tf;
+
+  while (1){
+
+    // This may only be false after the first run of the loop
+    if (!onLastPage) {
+      menucnt = 0;
+      for(uint8_t i = currPage*7; i < (currPage+1)*7; i++){
+        strcpy(tanswers[menucnt],fileNames[i]);
+        menucnt++;
+        if (i >= (filecount-1)) {
+          onLastPage = true;
           break;
         }
       }
-      f_closedir(&tdir);
-      goto browserstart;
     }
-    break;
-    case MENU_1:
-    case MENU_2:
-    case MENU_3:
-    case MENU_4:
-    case MENU_5:
-    case MENU_6:
-    case MENU_7:
+
+    // Clamp item selection position
+    default_select = (menucnt > default_select) ? default_select : menucnt;
+    
+    mret = questionBox_OLED((char *)browserTitle,(const char **)tanswers,menucnt,default_select,0, (scrollPage || flipPage));
+    scrollPage = false;
+    flipPage = false;
+          
+    switch(mret)
     {
-      //
-      FIL tf;
-      fret = f_open(&tf,tanswers[mret - 1],FA_OPEN_EXISTING);
-      if(fret != FR_OK)
-      {
-        //
-        strcat(filePath,"/");
-        strcat(filePath,tanswers[mret - 1]);
-        f_closedir(&tdir);
-        goto browserstart;
-      }
-      else
-      {
-        //
-        f_close(&tf);
-        strcat(filePath,"/");
-        strcat(filePath,tanswers[mret - 1]);
-        return;
-      }
-    }
-    break;
-    case MENU_PGUP:
-    case MENU_UPUP:
-    {
-      //
-      if(currPage > 1)
-      {
-        currPage--;
-        for(int i = 0;i<7;i++)
-        {
-          //
-          strcpy(tanswers[i],fileNames[(currPage - 1)*7 + i]); 
+      case MENU_CANCEL:
+        upOneDir(tdir);
+        changeDir = true;
+        return changeDir;
+        break;
+
+      case MENU_1:
+      case MENU_2:
+      case MENU_3:
+      case MENU_4:
+      case MENU_5:
+      case MENU_6:
+      case MENU_7:
+        if(f_open(&tf,tanswers[mret - 1],FA_OPEN_EXISTING) != FR_OK) {
+          strcat(filePath,"/");
+          strcat(filePath,tanswers[mret - 1]);
+          f_closedir(&tdir);
+          changeDir = true;
+          return changeDir;
+        } else {
+          f_close(&tf);
+          strcat(filePath,"/");
+          strcat(filePath,tanswers[mret - 1]);
+          changeDir = false;
+          return changeDir;
         }
-        bnomore = false;
-        menucnt = 7;
-      }
-      default_select = 1;
-      goto next_page1;
-    }
-    break;
-    case MENU_PGDN:
-    case MENU_DOWNDOWN:
-    {
-      //
-      if(bnomore)
-      {
-        default_select = menucnt;
-        goto next_page1;
-      }
-      currPage++;
-      if(currPage > lastPage)
-      {
-        //
-        lastPage++;
-        goto next_page;
-      }
-      else
-      {
-        //
-        menucnt=0;
-        bnomore = false;
-        for(int i=0;i<7;i++)
-        {
-          //
-          if((currPage - 1)*7 + i < currFile)
-          {
-            strcpy(tanswers[i],fileNames[(currPage - 1)*7 + i]);
-            menucnt++;
-          }
-          else
-          {
-            //
-            bnomore = true;
-            break;
+        break;
+
+      case MENU_PGUP:
+        flipPage = true;
+      case MENU_UPUP:
+        if (currPage == 0) {
+          default_select = 1;
+        } else {
+          currPage--;
+          scrollPage = true;
+          onLastPage = false;
+          if (flipPage) {
+            default_select = choice_ori;
+            flipPage = false;
+          } else {
+            default_select = 7;
           }
         }
-        default_select = 1;
-        goto next_page1;
-      }
+        break;
+
+      case MENU_PGDN:
+        flipPage = true;
+      case MENU_DOWNDOWN: 
+        if(onLastPage) {
+          default_select = 7;
+        } else {
+          currPage++;
+          scrollPage = true;
+          if (flipPage) {
+            default_select = choice_ori;
+            flipPage = false;
+          } else {
+            default_select = 1;
+          }
+        }
+        break;
+
+      default:
+        print_Error("File Err...",1);
+        break;
 
     }
-    break;
-    default:
-    {
-      //
-      print_Error("File Err...",1);
-    }
-    break;
   }
+}
 
-  /*
-
-  // Count files in directory
-  while (myFile.openNext(&myDir, O_READ)) {
-    // Ignore if hidden
-    if (myFile.isHidden()) {
-    }
-    // Indicate a directory.
-    else if (myFile.isDir()) {
-      currFile++;
-    }
-    // It's just a file
-    else if (myFile.isFile()) {
-      currFile++;
-    }
-    myFile.close();
-  }
-  myDir.close();
-
-  // "Calculate number of needed pages"
-  if (currFile < 8)
-    numPages = 1;
-  else if (currFile < 15)
-    numPages = 2;
-  else if (currFile < 22)
-    numPages = 3;
-  else if (currFile < 29)
-    numPages = 4;
-  else if (currFile < 36)
-    numPages = 5;
-
-  // Fill the array "answers" with 7 options to choose from in the file browser
-  char answers[7][20];
-
-page:
-
-  // If there are less than 7 entries, set count to that number so no empty options appear
-  byte count;
-  if (currFile < 8)
-    count = currFile;
-  else if (currPage == 1)
-    count = 7;
-  else if (currFile < 15)
-    count = currFile - 7;
-  else if (currPage == 2)
-    count = 7;
-  else if (currFile < 22)
-    count = currFile - 14;
-  else if (currPage == 3)
-    count = 7;
-  else if (currFile < 29)
-    count = currFile - 21;
-  else {
-    display_Clear();
-    println_Msg(F("Too many files"));
-    display_Update();
-    println_Msg(F(""));
-    println_Msg(F("Press Button..."));
-    display_Update();
-    wait();
-  }
-
-  // Open filepath directory
-  if (!myDir.open(filePath)) {
-    display_Clear();
-    print_Error(F("SD Error"), true);
-  }
-
-  int countFile = 0;
-  byte i = 0;
-  // Cycle through all files
-  while ((myFile.openNext(&myDir, O_READ)) && (i < 8)) {
-    // Get name of file
-    myFile.getName(nameStr, FILENAME_LENGTH);
-
-    // Ignore if hidden
-    if (myFile.isHidden()) {
-    }
-    // Directory
-    else if (myFile.isDir()) {
-      if (countFile == ((currPage - 1) * 7 + i)) {
-        snprintf(fileNames[i], FILENAME_LENGTH, "%s%s", "/", nameStr);
-        i++;
-      }
-      countFile++;
-    }
-    // File
-    else if (myFile.isFile()) {
-      if (countFile == ((currPage - 1) * 7 + i)) {
-        snprintf(fileNames[i], FILENAME_LENGTH, "%s", nameStr);
-        i++;
-      }
-      countFile++;
-    }
-    myFile.close();
-  }
-  myDir.close();
-
-  for (byte i = 0; i < 8; i++ ) {
-    // Copy short string into fileOptions
-    snprintf( answers[i], FILEOPTS_LENGTH, "%s", fileNames[i] );
-  }
-
-  // Create menu with title and 1-7 options to choose from
-  unsigned char answer = question_box(browserTitle, answers, count, 0);
-
-  // Check if the page has been switched
-  if (currPage != lastPage) {
-    lastPage = currPage;
-    goto page;
-  }
-
-  // Check if we are supposed to go back to the root dir
-  if (root) {
-    // Change working dir to root
-    filePath[0] = '/';
-    filePath[1] = '\0';
-    sd.chdir("/");
-    // Start again
-    root = 0;
-    goto browserstart;
-  }
-
-  // wait for user choice to come back from the question box menu
-  switch (answer)
-  {
-    case 0:
-      strncpy(fileName, fileNames[0], FILENAME_LENGTH - 1);
+void upOneDir(DIR tdir){
+  for(int i = sizeof(filePath) - 1; i>0; i--) {
+    if(filePath[i] == '/'||filePath[i] == '\\') {
+      filePath[i] = 0x00;
       break;
-
-    case 1:
-      strncpy(fileName, fileNames[1], FILENAME_LENGTH - 1);
-      break;
-
-    case 2:
-      strncpy(fileName, fileNames[2], FILENAME_LENGTH - 1);
-      break;
-
-    case 3:
-      strncpy(fileName, fileNames[3], FILENAME_LENGTH - 1);
-      break;
-
-    case 4:
-      strncpy(fileName, fileNames[4], FILENAME_LENGTH - 1);
-      break;
-
-    case 5:
-      strncpy(fileName, fileNames[5], FILENAME_LENGTH - 1);
-      break;
-
-    case 6:
-      strncpy(fileName, fileNames[6], FILENAME_LENGTH - 1);
-      break;
-
-      //case 7:
-      // File import
-      //break;
+    }
   }
-
-  // Add directory to our filepath if we just entered a new directory
-  if (fileName[0] == '/') {
-    // add dirname to path
-    strcat(filePath, fileName);
-    // Remove / from dir name
-    char* dirName = fileName + 1;
-    // Change working dir
-    sd.chdir(dirName);
-    // Start browser in new directory again
-    goto browserstart;
-  }
-  else {
-    // Afer everything is done change SD working directory back to root
-    sd.chdir("/");
-  }
-  filebrowse = 0;
-
-  */
+  
+  f_closedir(&tdir);
 }

@@ -62,8 +62,8 @@ static volatile int ticks = 0;
 void SysClockInit()
 {
   // Enable SysTick timer interrupt
-  //Sets timer to pulse every 108000 clock cycles (1ms)
-  SysTick->LOAD = (SystemCoreClock / 1000) - 1;
+  //Sets timer to pulse every 108000 clock cycles (1us)
+  SysTick->LOAD = (SystemCoreClock / 1000000) - 1;
   //Reset SysTick counter
   SysTick->VAL = 0;
   //Set SysTick clock source to CPU clock, enable the exception request and enable the counter
@@ -84,7 +84,7 @@ int getSystick()
 void delay(int n) {
   // Wait for N ticks. Restarts the timer for more accurate delay
   unsigned endTicks = ticks + n;
-  SysTick->CTRL = ~SysTick_CTRL_CLKSOURCE_Msk | SysTick_CTRL_TICKINT_Msk | SysTick_CTRL_ENABLE_Msk;
+  SysTick->CTRL = SysTick_CTRL_CLKSOURCE_Msk | SysTick_CTRL_TICKINT_Msk | ~SysTick_CTRL_ENABLE_Msk;
   SysTick->CTRL = SysTick_CTRL_CLKSOURCE_Msk | SysTick_CTRL_TICKINT_Msk | SysTick_CTRL_ENABLE_Msk;
   while (ticks < endTicks);
 }

@@ -270,7 +270,7 @@ void resetFlash_GBM() {
   send_GBM1(0x0F, 0x5555, 0xAA);
   send_GBM1(0x0F, 0x2AAA, 0x55);
   send_GBM1(0x0F, 0x5555, 0xF0);
-  delay(100);
+  delay(100000);
 }
 
 boolean readFlashID_GBM() 
@@ -752,7 +752,7 @@ void setup_GBM()
   // Set Data Pins (D0-D7) to Input
   gpio_init(DATA,GPIO_MODE_IN_FLOATING,GPIO_OSPEED_50MHZ,BITS(8,15));
 
-  delay(400);
+  delay(400000);
 
   // Check for Nintendo Power GB Memory cart
   byte timeout = 0;

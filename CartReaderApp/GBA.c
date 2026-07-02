@@ -88,7 +88,7 @@ void setROM_GBA()
   //// AD16-AD23
   //gpio_init(ADDR_3,GPIO_MODE_OUT_PP,GPIO_OSPEED_50MHZ,BITS(8,15));
   // Wait
-  delay(688);
+  delay(10000);
 }
 
 word readWord_GBA(unsigned long Address) 
@@ -1211,7 +1211,7 @@ void eraseFLASH_GBA()
   gpio_bit_set(CTRLGBA,CS_SRAM);
 
   // Wait until all is erased
-  delay(500);
+  delay(500000);
 }
 
 
@@ -1278,7 +1278,7 @@ void resetFLASH_GBA()
   gpio_bit_set(CTRLGBA,CS_SRAM);
 
   // Wait
-  delay(100);
+  delay(100000);
 }
 
 boolean blankcheckFLASH_GBA (unsigned long flashSize) 
@@ -1448,73 +1448,87 @@ void busyCheck_GBA(int currByte)
   setDataOutMode();
 }
 
-void writeFLASH_GBA (boolean browseFile, unsigned long flashSize, uint32_t pos)
+void writeFLASH_GBA (unsigned long bankSize, uint8_t numbanks)
 {
-  // Output a HIGH signal on CS_ROM WE_FLASH and OE_FLASH
-  gpio_bit_set(CTRLGBA,GBA_RD|GBA_WR|CS_ROM);
+  filePath[0] = '\0';
+  fileBrowser("/","Select fla file");
+  OledClear();
+  writeErrors = 0;
 
-  // Set address ports to output
-  // Set data port to output
-  setAddrOutMode();
-  setDataOutMode();
-
-  if (browseFile) 
-  {
-    filePath[0] = '\0';
-    fileBrowser("/","Select fla file");
-  }
-
-  OledShowString(0,0,"Writing flash...",8);
-   
+  char tmsg[64] = {0};
 
   FIL tf;
-  //open file on sd card
-  if (f_open(&tf, filePath, FA_READ) == FR_OK) 
-  {
-
-    // Seek to a new position in the file
-    if (pos != 0)
-      f_lseek(&tf,pos);
-
-    // Output a LOW signal on CE_FLASH
-    gpio_bit_reset(CTRLGBA,CS_SRAM);
-
-    for (unsigned long currAddress = 0; currAddress < flashSize; currAddress += 512) 
+    //open file on sd card
+    if (f_open(&tf, filePath, FA_READ) == FR_OK) 
     {
-      //fill sdBuffer
-      UINT rdt;
-      f_read(&tf, sdBuffer, 512, &rdt);
 
-      for (int c = 0; c < 512; c++) {
-        // Write command sequence
-        writeByteFlash_GBA(0x5555, 0xaa);
-        writeByteFlash_GBA(0x2aaa, 0x55);
-        writeByteFlash_GBA(0x5555, 0xa0);
-        // Write current byte
-        writeByteFlash_GBA(currAddress + c, sdBuffer[c]);
+    OledShowString(0,0,"Erasing flash...",8);
+    eraseFLASH_GBA();
+    OledShowString(95,0," Done",8);
+    
+    for (int bank = 0; bank < numbanks; bank++) {
 
-        // Wait
-        busyCheck_GBA(c);
+      switchBank_GBA(bank);
+      f_lseek(&tf, bank*bankSize);
+
+      setROM_GBA();
+
+      blankcheckFLASH_GBA(bankSize);
+    
+      // Output a HIGH signal on CS_ROM WE_FLASH and OE_FLASH
+      gpio_bit_set(CTRLGBA,GBA_RD|GBA_WR|CS_ROM);
+      
+      // Set address ports to output
+      // Set data port to output
+      setAddrOutMode();
+      setDataOutMode();
+      
+      // Output a LOW signal on CE_FLASH
+      gpio_bit_reset(CTRLGBA,CS_SRAM);
+      
+      for (unsigned long currAddress = 0; currAddress < bankSize; currAddress += 512) 
+      {
+        sprintf(tmsg, "Writing bank %d/%d", (bank+1), numbanks);
+        OledShowString(0,1+(bank*2),tmsg,8);
+        //fill sdBuffer
+        UINT rdt;
+        f_read(&tf, sdBuffer, 512, &rdt);
+      
+        for (int c = 0; c < 512; c++) {
+          // Write command sequence
+          writeByteFlash_GBA(0x5555, 0xaa);
+          writeByteFlash_GBA(0x2aaa, 0x55);
+          writeByteFlash_GBA(0x5555, 0xa0);
+          // Write current byte
+          writeByteFlash_GBA(currAddress + c, sdBuffer[c]);
+      
+          // Wait
+          busyCheck_GBA(c);
+        }
       }
+
+      writeErrors += verifyFLASH_GBA(bankSize, bankSize*bank, bank, numbanks);
     }
-    // Set CS_FLASH high
-    gpio_bit_set(CTRLGBA,CS_SRAM);
 
     // Close the file:
     f_close(&tf);
-    OledShowString(0,3,"Done!",8);     
-
-  }
-  else 
-  {
-    OledShowString(0,4,"Error!",8);
+    OledShowString(0,5,"Done!",8);
+  } else {
+    OledShowString(0,5,"Error!",8);
     print_Error("File doesnt exist!", false);
+  }
+
+  if(writeErrors > 0) {
+    sprintf(tmsg,"Error: %d bytes.",writeErrors);
+    //OledShowString(0,5,tmsg,8);
+    print_Error(tmsg, false);
   }
 }
 
 // Check if the Flashrom was written without any error
-void verifyFLASH_GBA(unsigned long flashSize, uint32_t pos) 
+unsigned long verifyFLASH_GBA(unsigned long flashSize, uint32_t pos, uint8_t bank, uint8_t numbanks) 
 {
+  char tmsg[64] = {0};
   // Output a HIGH signal on CS_ROM WE_FLASH
   gpio_bit_set(CTRLGBA,GBA_WR|CS_ROM);
 
@@ -1528,7 +1542,8 @@ void verifyFLASH_GBA(unsigned long flashSize, uint32_t pos)
   gpio_bit_reset(CTRLGBA,CS_SRAM|GBA_RD);
 
   // Signal beginning of process
-  OledShowString(0,2,"Verify...",8);
+  sprintf(tmsg, "Verifying %d/%d", (bank+1), numbanks);
+  OledShowString(0,2+(bank*2),tmsg,8);
    
 
   unsigned long wrError = 0;
@@ -1561,16 +1576,7 @@ void verifyFLASH_GBA(unsigned long flashSize, uint32_t pos)
   // Set CS_FLASH high
   gpio_bit_set(CTRLGBA,CS_SRAM);
 
-  if (wrError == 0) 
-  {
-    OledShowString(55,2,"OK",8);
-  }
-  else 
-  {
-    char tmsg[32] = {0};
-    sprintf(tmsg," %d Errors.",wrError);
-    print_Error(tmsg, false);
-  }
+  return wrError;
 }
 
 /******************************************
@@ -1591,13 +1597,13 @@ void resetIntel_GBA(unsigned long partitionSize)
 void resetMX29GL128E_GBA() 
 {
   writeWord_GAB(0, 0xF0);
-  delay(1);
+  delay(1000);
 }
 
 void resetSpansion_GBA() 
 {
   writeWord_GBA(0, 0xF0);
-  delay(1);
+  delay(1000);
 }
 
 boolean sectorCheckMX29GL128E_GBA() {
@@ -2190,7 +2196,7 @@ void writeMSP55LV128_GBA(FIL * ptf)
                 delayMicroseconds(1);
                 writeWord_GAB(0xAAA, 0xF0);
 
-                delay(1000);
+                delay(1000000);
                 printf("write err1!\n");
 
                 LED_BLUE_BLINK;
@@ -2206,7 +2212,7 @@ void writeMSP55LV128_GBA(FIL * ptf)
                 delayMicroseconds(1);
                 writeWord_GAB(0xAAA, 0xF0);
 
-                delay(2000);
+                delay(2000000);
                 printf("write err2!\n");
 
                 LED_BLUE_BLINK;
@@ -2268,7 +2274,7 @@ void writeMX29GL128E_GBA(FIL * ptf)
         // Confirm write buffer
         //delay(1);
         writeWord_GAB(currSector, 0x29);
-        delay(1);
+        delay(1000);
 
         // Read the status register
         word statusReg = readWord_GAB(currSector + currSdBuffer + currWriteBuffer + 62);
@@ -2393,7 +2399,7 @@ void writeSpansion_GBA(FIL * ptf)
                 delayMicroseconds(1);
                 writeWord_GBA(0xAAA, 0xF0);
 
-                delay(1000);
+                delay(1000000);
                 printf("write err1!\n");
 
                 LED_BLUE_BLINK;
@@ -2409,7 +2415,7 @@ void writeSpansion_GBA(FIL * ptf)
                 delayMicroseconds(1);
                 writeWord_GBA(0xAAA, 0xF0);
 
-                delay(1000);
+                delay(1000000);
                 printf("write err2!\n");
 
                 LED_BLUE_BLINK;
@@ -2759,28 +2765,28 @@ void flashRepro_GBA()
       {
         // Don't know the correct size so just take some guesses
         resetIntel_GBA(0x8000);
-        delay(1000);
+        delay(1000000);
         resetIntel_GBA(0x100000);
-        delay(1000);
+        delay(1000000);
         resetIntel_GBA(0x200000);
-        delay(1000);
+        delay(1000000);
       }
       else if (strcmp(flashid, "8816") == 0) 
       {
         resetIntel_GBA(0x200000);
-        delay(1000);
+        delay(1000000);
       }
       else if (strcmp(flashid, "227E") == 0 || strcmp(flashid, "227A") == 0) 
       {
         if(manufacturerid == 0x1)
         {
           resetSpansion_GBA();
-          delay(1000);
+          delay(1000000);
         }
         else
         {
           resetMX29GL128E_GBA();
-          delay(1000);
+          delay(1000000);
         }
       }
 
@@ -2803,7 +2809,7 @@ void flashRepro_GBA()
       */
 
 
-      use_tick = (getSystick() - use_tick)/1000;
+      use_tick = (getSystick() - use_tick)/1000000;
       sprintf(tmsg,"Use Time: %d(s)",use_tick);
       OledShowString(10,6,tmsg,8);
     }
@@ -2888,7 +2894,7 @@ void writeTEST_GBA(uint32_t testSize)
                 delayMicroseconds(1);
                 writeWord_GAB(0xAAA, 0xF0);
 
-                delay(1000);
+                delay(1000000);
                 printf("write err1!\n");
 
                 LED_BLUE_BLINK;
@@ -2904,7 +2910,7 @@ void writeTEST_GBA(uint32_t testSize)
                 delayMicroseconds(1);
                 writeWord_GAB(0xAAA, 0xF0);
 
-                delay(1000);
+                delay(1000000);
                 printf("write err2!\n");
 
                 LED_BLUE_BLINK;
@@ -2945,7 +2951,7 @@ void flashTest_GBA(uint32_t testSize)
     // Verify
     OledShowString(0,6,"Verifying ROM...",8);
     resetMX29GL128E_GBA();
-    delay(888);
+    delay(888000);
 
     if (verifyFlashromTest_GBA(testSize) == 1)
     {
@@ -2967,7 +2973,7 @@ void flashTest_GBA(uint32_t testSize)
 /******************************************
    Setup
  *****************************************/
-void setup_GBA() 
+uint8_t setup_GBA() 
 {
   //
   char tmsg[64] = {0};
@@ -3386,16 +3392,7 @@ uint8_t gbaMenu() {
             sprintf(tmsg,"ID: %s",flashid);
             print_Error(tmsg, true);
           }
-          eraseFLASH_GBA();
-          if (blankcheckFLASH_GBA(0x10000)) 
-          {
-            writeFLASH_GBA(1, 0x10000, 0);
-            verifyFLASH_GBA(0x10000, 0);
-          }
-          else 
-          {
-            print_Error("Erase failed!", false);
-          }
+          writeFLASH_GBA(0x10000, 1);
           setROM_GBA();
           break;
 
@@ -3409,20 +3406,8 @@ uint8_t gbaMenu() {
             sprintf(tmsg,"ID: %s",flashid);
             print_Error(tmsg, true);
           }
-          eraseFLASH_GBA();
-          // 131072 bytes are divided into two 65536 byte banks
-          for(int currbank = 0; currbank < 2; currbank++) {
-            switchBank_GBA(currbank);
-            setROM_GBA();
-            if (blankcheckFLASH_GBA(0x10000))
-            {
-              writeFLASH_GBA(1 - currbank, 0x10000, 0x10000*currbank);
-              verifyFLASH_GBA(0x10000, 0x10000*currbank);
-            } else {
-              print_Error("Erase failed!", false);
-            }
-            switchBank_GBA(0x1);
-          }
+          //Write 2 banks of 0x10000 each
+          writeFLASH_GBA(0x10000, 2);
           setROM_GBA();
           break;
 
@@ -3499,18 +3484,15 @@ uint8_t gbaMenu() {
   return  bret;
 }
 
-void gbaScreen()
+uint8_t gbaScreen()
 {
   //
   while(1)
   {
     //
     setup_GBA();
-    if(gbaMenu() > 0)
-    {
-      //
-      break;
-    }
+    uint8_t bret = gbaMenu();
+    return bret;
   }
 }
 

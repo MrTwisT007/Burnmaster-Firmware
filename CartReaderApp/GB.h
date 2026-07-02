@@ -17,8 +17,8 @@ extern int romBanks;
 extern word lastByte;
 
 void TestMemGB(boolean bFast);
-void gbFlashScreen();
-void gbScreen();
+uint8_t gbFlashScreen();
+uint8_t gbScreen();
 
 //ADDRLOW   A0  PD8     FLASH/SRAM
 //ADDRLOW   A1  PD9     FLASH/SRAM

@@ -14,7 +14,9 @@
 #define AD23       GPIO_PIN_15
 
 void TestMemGBA(boolean bFast);
-void gbaScreen();
+uint8_t gbaScreen();
+uint8_t setup_GBA();
+unsigned long verifyFLASH_GBA(unsigned long flashSize, uint32_t pos, uint8_t bank, uint8_t numbanks);
 
 #endif
 

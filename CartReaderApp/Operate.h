@@ -1,3 +1,5 @@
+#include "fatfs/ff.h"
+
 #pragma onece
 
 #define BTNNONE (0)
@@ -23,12 +25,16 @@
 #define MENU_PGDN (103)
 
 
+
 void KeyBrdInit();
 uint8_t keyState();
-uint8_t checkButton();
+uint8_t checkButton(int previousbutton);
 void WaitOKBtn();
 
 // Display a question box with selectable answers. Make sure default choice is in (0, num_answers]
 unsigned char questionBox_OLED(char * question, const char* const answers[7], int num_answers, int default_choice, uint8_t rollselect, uint8_t clrSrc);
 uint8_t my_mkdir(char * dir);
 void fileBrowser(char * start_dir , const char * browserTitle);
+uint8_t populateFileList(DIR tdir, FILINFO finfo, char * browserTitle);
+uint8_t openBrowserMenu(DIR tdir, FILINFO finfo, uint8_t filecount, char * browserTitle);
+void upOneDir(DIR tdir);
