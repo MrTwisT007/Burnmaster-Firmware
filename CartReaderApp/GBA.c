@@ -16,7 +16,7 @@
    Variables
  *****************************************/
 char calcChecksumStr[5];
-boolean readType;
+bool readType;
 unsigned long cartSize;
 char cartID[5];
 byte romVersion = 0;
@@ -91,9 +91,9 @@ void setROM_GBA()
   delay(10000);
 }
 
-word readWord_GBA(unsigned long Address) 
+halfword readWord_GBA(unsigned long Address) 
 {
-  // Divide address by two to get word addressing
+  // Divide address by two to get halfword addressing
   unsigned long myAddress = Address >> 1;
 
   // Set address/data ports to output
@@ -127,7 +127,7 @@ word readWord_GBA(unsigned long Address)
   delay_GBA();  
   delay_GBA();
 
-  word myWord = GPIO_ISTAT(ADDR_1)&0xFFFF;
+  halfword myWord = GPIO_ISTAT(ADDR_1)&0xFFFF;
   myWord = ((myWord << 8) + (myWord >> 8))&0xF0FF;
   myWord += (GPIO_ISTAT(ADDR_2)&0x0F00);
 
@@ -137,9 +137,9 @@ word readWord_GBA(unsigned long Address)
   return myWord;
 }
 
-word readWord_buf_GBA(unsigned long Address, uint16_t *outBuf, uint16_t cnt) 
+halfword readWord_buf_GBA(unsigned long Address, uint16_t *outBuf, uint16_t cnt) 
 {
-  // Divide address by two to get word addressing
+  // Divide address by two to get halfword addressing
   unsigned long myAddress = Address >> 1;
 
 
@@ -162,7 +162,7 @@ word readWord_buf_GBA(unsigned long Address, uint16_t *outBuf, uint16_t cnt)
   //GPIO_OCTL(ADDR_2) = (GPIO_OCTL(ADDR_2)&0xFFFFF0FF);
   setAddrInMode();
 
-  for(WORD i = 0;i<cnt;i++)
+  for(halfword i = 0;i<cnt;i++)
   {
     // Pull RD to LOW
     gpio_bit_reset(CTRLGBA,GBA_RD);
@@ -170,7 +170,7 @@ word readWord_buf_GBA(unsigned long Address, uint16_t *outBuf, uint16_t cnt)
     // Delay here or read error with repro
     delay_GBA();  
 
-    word myWord = GPIO_ISTAT(ADDR_1)&0xFFFF;
+    halfword myWord = GPIO_ISTAT(ADDR_1)&0xFFFF;
     //printf("-%04x\n",myWord);
     myWord = ((myWord << 8) + (myWord >> 8))&0xF0FF;
     myWord += (GPIO_ISTAT(ADDR_2)&0x0F00);
@@ -185,10 +185,10 @@ word readWord_buf_GBA(unsigned long Address, uint16_t *outBuf, uint16_t cnt)
   return cnt;
 }
 
-void writeWord_GBA(unsigned long Address, word myWord) 
+void writeWord_GBA(unsigned long Address, halfword myWord) 
 {
 
-  // Divide address by two to get word addressing
+  // Divide address by two to get halfword addressing
   unsigned long myAddress = Address >> 1;
 
   // Set address/data ports to output
@@ -231,37 +231,37 @@ void writeWord_GBA(unsigned long Address, word myWord)
 }
 
 // This function swaps bit at positions p1 and p2 in an integer n
-word swapBits(word n, word p1, word p2)
+halfword swapBits(halfword n, halfword p1, halfword p2)
 {
   // Move p1'th to rightmost side
-  word bit1 =  (n >> p1) & 1;
+  halfword bit1 =  (n >> p1) & 1;
 
   // Move p2'th to rightmost side
-  word bit2 =  (n >> p2) & 1;
+  halfword bit2 =  (n >> p2) & 1;
 
   // XOR the two bits */
-  word x = (bit1 ^ bit2);
+  halfword x = (bit1 ^ bit2);
 
   // Put the xor bit back to their original positions
   x = (x << p1) | (x << p2);
 
   // XOR 'x' with the original number so that the two sets are swapped
-  word result = n ^ x;
+  halfword result = n ^ x;
 
   return result;
 }
 
 // Some repros have D0 and D1 switched
-word readWord_GAB(unsigned long myAddress) {
+halfword readWord_GAB(unsigned long myAddress) {
 #ifdef TEST_MY_CART
-  word tempWord = readWord_GBA(myAddress);
+  halfword tempWord = readWord_GBA(myAddress);
 #else
-  word tempWord = swapBits(readWord_GBA(myAddress), 0, 1);
+  halfword tempWord = swapBits(readWord_GBA(myAddress), 0, 1);
 #endif
   return tempWord;
 }
 
-void writeWord_GAB(unsigned long myAddress, word myWord) {
+void writeWord_GAB(unsigned long myAddress, halfword myWord) {
 #ifdef TEST_MY_CART
   writeWord_GBA(myAddress, myWord);
 #else
@@ -337,12 +337,12 @@ void getCartInfo_GBA()
 
   for (int currWord = 0; currWord < 96; currWord++) 
   {
-    word tempWord = readWord_GBA(currWord<<1);
-    ((word *)sdBuffer)[currWord] = tempWord;
+    halfword tempWord = readWord_GBA(currWord<<1);
+    ((halfword *)sdBuffer)[currWord] = tempWord;
   }
 
   // Compare Nintendo logo against known checksum, 156 bytes starting at 0x04
-  word logoChecksum = 0;
+  halfword logoChecksum = 0;
   for (int currByte = 0x4; currByte < 0xA0; currByte++) 
   {
     logoChecksum += sdBuffer[currByte];
@@ -474,30 +474,8 @@ void getCartInfo_GBA()
 void readROM_GBA() 
 {
   // Get name, add extension and convert to char array for sd lib
-  strcpy(fileName, romName);
-  strcat(fileName, ".gba");
-
-  // create a new folder for the rom file
-  foldern = load_dword();
-  sprintf(folder, "/GBA/ROM/%s/%d", romName, foldern);
-  my_mkdir(folder);
-  f_chdir(folder);
-
-  //clear the screen
-  OledClear();
-  OledShowString(0,0,"Saving to :",8);
-  OledShowString(0,1,folder,8);
-
-  // write new folder number back to eeprom
-  foldern = foldern + 1;
-  save_dword(foldern);
-
   FIL tf;
-  //open file on sd card
-  if (f_open(&tf,fileName, FA_CREATE_ALWAYS|FA_WRITE) != FR_OK) 
-  {
-    print_Error("Can't create file!", true);
-  }
+  FRESULT rst = createStoreDirectory(&tf, romName, ".gba", "GBA", "ROM");
 
   // Read rom
   for (int myAddress = 0; myAddress < cartSize; myAddress += 512) {
@@ -510,7 +488,7 @@ void readROM_GBA()
 
     for (int currWord = 0; currWord < 256; currWord++) 
     {
-      ((word *)sdBuffer)[currWord] = readWord_GBA(myAddress + currWord*2);
+      ((halfword *)sdBuffer)[currWord] = readWord_GBA(myAddress + currWord*2);
     }
 
     // Write to SD
@@ -519,23 +497,19 @@ void readROM_GBA()
   }
 
   showPercent(1,1,20,3);
+  OledShowString(0,0,"Saved to ",8);
 
   // Close the file:
   f_close(&tf);
 }
 
 // Calculate the checksum of the dumped rom
-boolean compare_checksum_GBA () 
+bool compare_checksum_GBA () 
 {
   OledShowString(0,4,"Calculating Checksum",8);
 
   strcpy(fileName, romName);
   strcat(fileName, ".gba");
-
-  // last used rom folder
-  foldern = load_dword();
-  sprintf(folder, "/GBA/ROM/%s/%d", romName, foldern - 1);
-  f_chdir(folder);
 
   FIL tf;
   // If file exists
@@ -579,34 +553,10 @@ boolean compare_checksum_GBA ()
 /******************************************
   GBA SRAM SAVE Functions
 *****************************************/
-void readSRAM_GBA(boolean browseFile, unsigned long sramSize, uint32_t pos) 
+void readSRAM_GBA(unsigned long sramSize, uint32_t pos) 
 {
-  if (browseFile) 
-  {
-    // Get name, add extension and convert to char array for sd lib
-    strcpy(fileName, romName);
-    strcat(fileName, ".srm");
-
-    // create a new folder for the save file
-    foldern = load_dword();
-    sprintf(folder, "GBA/SAVE/%s/%d", romName, foldern);
-    my_mkdir(folder);
-    f_chdir(folder);
-
-    // Save location
-    OledShowString(0,0,"Saving to :",8);
-    OledShowString(0,1,folder,8);
-    // write new folder number back to eeprom
-    foldern = foldern + 1;
-    save_dword(foldern);
-  }
-
-  //open file on sd card
   FIL tf;
-  if (f_open(&tf, fileName, FA_CREATE_ALWAYS|FA_WRITE) != FR_OK) 
-  {
-    print_Error("SD File Error", true);
-  }
+  FRESULT rst = createStoreDirectory(&tf, romName, ".srm", "GBA", "SAVE");
 
   // Seek to a new position in the file
   if (pos != 0)
@@ -618,20 +568,24 @@ void readSRAM_GBA(boolean browseFile, unsigned long sramSize, uint32_t pos)
     for (int c = 0; c < 512; c++) {
       // Read byte
       sdBuffer[c] = readByte_GBA(currAddress + c);
+      draw_progressbar(currAddress+c, sramSize, 3);
     }
 
     // Write sdBuffer to file
     UINT wdt;
     f_write(&tf, sdBuffer, 512, &wdt);
   }
+
+  draw_progressbar(1, 1, 3);
+
   // Close the file:
   f_close(&tf);
 
   // Signal end of process
-  OledShowString(0,4,"Done.",8);
+  OledShowString(0,0,"Saved to ",8);
 }
 
-void writeSRAM_GBA(boolean browseFile, unsigned long sramSize, uint32_t pos) 
+void writeSRAM_GBA(bool browseFile, unsigned long sramSize, uint32_t pos) 
 {
   if (browseFile) 
   {
@@ -645,7 +599,7 @@ void writeSRAM_GBA(boolean browseFile, unsigned long sramSize, uint32_t pos)
   if (f_open(&tf, filePath, FA_READ) == FR_OK) 
   {
 
-    OledShowString(0,1,"SRAM writing...",8);
+    OledShowString(0,0,"SRAM writing...",8);
 
     // Seek to a new position in the file
     if (pos != 0)
@@ -665,12 +619,12 @@ void writeSRAM_GBA(boolean browseFile, unsigned long sramSize, uint32_t pos)
         writeByte_GBA(currAddress + c, sdBuffer[c]);
       }
 
-      showPercent(currAddress,sramSize,6,2);
+      draw_progressbar(currAddress, sramSize, 1);
     }
     // Close the file:
     f_close(&tf);
-    showPercent(1,1,6,2);
-    OledShowString(0,3,"finished!",8);
+    draw_progressbar(1, 1, 1);
+    OledShowString(0,2,"Done!",8);
 
   }
   else 
@@ -767,9 +721,9 @@ void TestSRAM_GBA(unsigned long sramSize)
 *****************************************/
 
 // Send address as bits to eeprom
-void send_GBA(word currAddr, word numBits) 
+void send_GBA(halfword currAddr, halfword numBits) 
 {
-  for (word addrBit = numBits; addrBit > 0; addrBit--) {
+  for (halfword addrBit = numBits; addrBit > 0; addrBit--) {
     // If you want the k-th bit of n, then do
     // (n & ( 1 << k )) >> k
     if (((currAddr & ( 1 << (addrBit - 1))) >> (addrBit - 1))) {
@@ -794,7 +748,7 @@ void send_GBA(word currAddr, word numBits)
 }
 
 // Write 512K eeprom block
-void writeBlock_EEP(word startAddr, word eepSize) 
+void writeBlock_EEP(halfword startAddr, halfword eepSize) 
 {
   // Setup
   // Set A0 to Output
@@ -814,7 +768,7 @@ void writeBlock_EEP(word startAddr, word eepSize)
   delay_GBA();
 
   // Write 64*8=512 bytes
-  for (word currAddr = startAddr; currAddr < startAddr + 64; currAddr++) 
+  for (halfword currAddr = startAddr; currAddr < startAddr + 64; currAddr++) 
   {
     // Set CS_ROM to LOW
     gpio_bit_reset(CTRLGBA,CS_ROM);
@@ -891,7 +845,7 @@ void writeBlock_EEP(word startAddr, word eepSize)
 }
 
 // Reads 512 bytes from eeprom
-void readBlock_EEP(word startAddress, word eepSize) {
+void readBlock_EEP(halfword startAddress, halfword eepSize) {
   // Setup
   gpio_init(CTRLGBA,GPIO_MODE_OUT_PP,GPIO_OSPEED_50MHZ,GBA_RD|GBA_WR|CS_ROM);
 
@@ -912,7 +866,7 @@ void readBlock_EEP(word startAddress, word eepSize) {
   delay_GBA();
 
   // Read 64*8=512 bytes
-  for (word currAddr = startAddress; currAddr < startAddress + 64; currAddr++) 
+  for (halfword currAddr = startAddress; currAddr < startAddress + 64; currAddr++) 
   {
     // Set CS_ROM to LOW
     gpio_bit_reset(CTRLGBA,CS_ROM);
@@ -1011,7 +965,7 @@ void readBlock_EEP(word startAddress, word eepSize) {
 }
 
 // Check if the SRAM was written without any error
-unsigned long verifyEEP_GBA(word eepSize) 
+unsigned long verifyEEP_GBA(halfword eepSize) 
 {
   unsigned long wrError = 0;
 
@@ -1023,7 +977,7 @@ unsigned long verifyEEP_GBA(word eepSize)
   }
 
   // Fill sd Buffer
-  for (word currAddress = 0; currAddress < eepSize * 16; currAddress += 64) 
+  for (halfword currAddress = 0; currAddress < eepSize * 16; currAddress += 64) 
   {
     // Disable interrupts for more uniform clock pulses
     __disable_irq();
@@ -1047,10 +1001,11 @@ unsigned long verifyEEP_GBA(word eepSize)
 }
 
 // Write eeprom from file
-void writeEeprom_GBA(word eepSize) {
+void writeEeprom_GBA(halfword eepSize) {
   // Launch Filebrowser
   filePath[0] = '\0';
   fileBrowser("/","Select eep file");
+  OledClear();
 
   OledShowString(0,0,"Writing eeprom...",8);
   
@@ -1058,24 +1013,27 @@ void writeEeprom_GBA(word eepSize) {
   //open file on sd card
   if (f_open(&tf, filePath, FA_READ) == FR_OK) 
   {
-    for (word i = 0; i < eepSize * 16; i += 64) 
+    for (halfword currAddress = 0; currAddress < eepSize * 16; currAddress += 64) 
     {
       // Fill romBuffer
       UINT rdt;
       f_read(&tf, sdBuffer, 512, &rdt);
+
       // Disable interrupts for more uniform clock pulses
       __disable_irq();
+
       // Write 512 bytes
-      writeBlock_EEP(i, eepSize);
+      writeBlock_EEP(currAddress, eepSize);
+
       __enable_irq();
 
-      // Wait
-      delayMicroseconds(200);//???
+      draw_progressbar(currAddress, eepSize*16, 1);
     }
 
+    draw_progressbar(1, 1, 1);
     // Close the file:
     f_close(&tf);
-    OledShowString(0,1,"Done.",8);
+    OledShowString(0,2,"Done!",8);
     
   }
   else 
@@ -1086,29 +1044,10 @@ void writeEeprom_GBA(word eepSize) {
 }
 
 // Read eeprom to file
-void readEeprom_GBA(word eepSize) {
+void readEeprom_GBA(halfword eepSize) {
   // Get name, add extension and convert to char array for sd lib
-  strcpy(fileName, romName);
-  strcat(fileName, ".eep");
-
-  // create a new folder for the save file
-  foldern = load_dword();
-
-  sprintf(folder, "GBA/SAVE/%s/%u", romName, foldern);
-  my_mkdir(folder);
-  f_chdir(folder);
-
-  // Save location
-  sprintf(folder, "%s/%u",romName, foldern);
-  OledShowString(0,0,"Saving to :",8);
-  OledShowString(0,1,folder,8);
-  
-
-  // write new folder number back to eeprom
-  foldern = foldern + 1;
-  save_dword(foldern);
-
   FIL tf;
+  FRESULT rst = createStoreDirectory(&tf, romName, ".eep", "GBA", "SAVE");
 
   //open file on sd card
   if (f_open(&tf, fileName, FA_CREATE_ALWAYS | FA_WRITE) != FR_OK) 
@@ -1117,13 +1056,17 @@ void readEeprom_GBA(word eepSize) {
   }
 
   // Each block contains 8 Bytes, so for a 8KB eeprom 1024 blocks need to be read
-  for (word currAddress = 0; currAddress < eepSize * 16; currAddress += 64) 
+  for (halfword currAddress = 0; currAddress < eepSize * 16; currAddress += 64) 
   {
     // Disable interrupts for more uniform clock pulses
     __disable_irq();
+
     // Fill sd Buffer
     readBlock_EEP(currAddress, eepSize);
+
     __enable_irq();
+
+    draw_progressbar(currAddress, eepSize*16, 3);
 
     UINT wdt;
     // Write sdBuffer to file
@@ -1131,6 +1074,9 @@ void readEeprom_GBA(word eepSize) {
     // Wait
     delayMicroseconds(200);
   }
+
+  draw_progressbar(1, 1, 3);
+  OledShowString(0,0,"Saved to ",8);
   f_close(&tf);
 }
 
@@ -1281,7 +1227,7 @@ void resetFLASH_GBA()
   delay(100000);
 }
 
-boolean blankcheckFLASH_GBA (unsigned long flashSize) 
+bool blankcheckFLASH_GBA (unsigned long flashSize) 
 {
   // Output a HIGH signal on CS_ROM WE_FLASH
   gpio_bit_set(CTRLGBA,GBA_WR|CS_ROM);
@@ -1296,7 +1242,7 @@ boolean blankcheckFLASH_GBA (unsigned long flashSize)
   // Set data pins to input
   setDataInMode();
 
-  boolean blank = 1;
+  bool blank = 1;
 
   // Output a LOW signal on  CE_FLASH
   gpio_bit_reset(CTRLGBA,CS_SRAM);
@@ -1353,81 +1299,58 @@ void switchBank_GBA(byte bankNum)
   gpio_bit_set(CTRLGBA,CS_SRAM);
 }
 
-void readFLASH_GBA (boolean browseFile, unsigned long flashSize, uint32_t pos)
+void readFLASH_GBA (unsigned long bankSize, uint8_t numbanks)
 {
-  // Output a HIGH signal on CS_ROM WE_FLASH
-  gpio_bit_set(CTRLGBA,GBA_WR|CS_ROM);
 
-  // Set address ports to output
-  setAddrOutMode();
-  // Set address to 0
-  setAddr(0x0, false);
-
-  // Set data pins to input
-  setDataInMode();
-
-  if (browseFile) 
-  {
-    // Get name, add extension and convert to char array for sd lib
-    strcpy(fileName, romName);
-    strcat(fileName, ".fla");
-
-    // create a new folder for the save file
-    foldern = load_dword();
-
-    sprintf(folder, "GBA/SAVE/%s/%d", romName, foldern);
-    my_mkdir(folder);
-    f_chdir(folder);
-
-    // Save location
-    OledShowString(0,0,"Saving to :",8);
-    OledShowString(0,1,folder,8);
-
-    // write new folder number back to eeprom
-    foldern = foldern + 1;
-    save_dword(foldern);
-  }
-
-
+  // Get name, add extension and convert to char array for sd lib
   FIL tf;
-  //open file on sd card
-  if (f_open(&tf, fileName,FA_CREATE_ALWAYS | FA_WRITE) != FR_OK) 
-  {
-    print_Error("SD File Error", true);
-  }
+  FRESULT rst = createStoreDirectory(&tf, romName, ".fla", "GBA", "SAVE");
 
-  // Seek to a new position in the file
-  if (pos != 0)
-    f_lseek(&tf, pos);
+  for (int bank = 0; bank < numbanks; bank++) {
+    switchBank_GBA(bank);
+    //f_lseek(&tf, bank*bankSize);
 
-  // Output a LOW signal on CE_FLASH
-  gpio_bit_reset(CTRLGBA,CS_SRAM);
+    setROM_GBA();
 
-  // Output a LOW signal on OE_FLASH
-  gpio_bit_reset(CTRLGBA,GBA_RD);
+    // Output a HIGH signal on CS_ROM WE_FLASH
+    gpio_bit_set(CTRLGBA,GBA_WR|CS_ROM);
+    
+    // Set address ports to output
+    setAddrOutMode();
+    // Set address to 0
+    setAddr(0x0, false);
+    
+    // Set data pins to input
+    setDataInMode();
 
-  for (unsigned long currAddress = 0; currAddress < flashSize; currAddress += 512) 
-  {
-    LED_RED_BLINK;
-    showPercent(currAddress,flashSize,20,3);
-    for (int c = 0; c < 512; c++) 
+    // Output a LOW signal on CE_FLASH
+    gpio_bit_reset(CTRLGBA,CS_SRAM);
+    
+    // Output a LOW signal on OE_FLASH
+    gpio_bit_reset(CTRLGBA,GBA_RD);
+    
+    for (unsigned long currAddress = 0; currAddress < bankSize; currAddress += 512) 
     {
-      // Read byte
-      sdBuffer[c] = readByteFlash_GBA(currAddress + c);
+      LED_RED_BLINK;
+      draw_progressbar((currAddress+bankSize*bank), bankSize*numbanks,3);
+      for (int c = 0; c < 512; c++) 
+      {
+        // Read byte
+        sdBuffer[c] = readByteFlash_GBA(currAddress + c);
+      }
+      // Write sdBuffer to file
+      UINT wdt;
+      f_write(&tf, sdBuffer, 512, &wdt);
     }
-    // Write sdBuffer to file
-    UINT wdt;
-    f_write(&tf, sdBuffer, 512, &wdt);
-
-
+    
+    // Set CS_FLASH high
+    gpio_bit_set(CTRLGBA,CS_SRAM);
   }
-  showPercent(1,1,20,3);
+
+  draw_progressbar(1, 1, 3);
   f_close(&tf);
-
-  // Set CS_FLASH high
-  gpio_bit_set(CTRLGBA,CS_SRAM);
-
   // Signal end of process
+  OledShowString(0,0,"Saved to ",8);
   OledShowString(20,4,"Done!",8);
 }
 
@@ -1435,11 +1358,13 @@ void busyCheck_GBA(int currByte)
 {
   // Set data pins to input
   setDataInMode();
+
   // Output a LOW signal on OE_FLASH
   gpio_bit_reset(CTRLGBA,GBA_RD);
-  // Read PINC
+
   while (((GPIO_ISTAT(ADDR_3)>>8)&0xFF) != sdBuffer[currByte]) 
   {
+    delay(1);
   }
   // Output a HIGH signal on OE_FLASH
   gpio_bit_set(CTRLGBA,GBA_RD);
@@ -1448,7 +1373,7 @@ void busyCheck_GBA(int currByte)
   setDataOutMode();
 }
 
-void writeFLASH_GBA (unsigned long bankSize, uint8_t numbanks)
+void writeFLASH_GBA (uint32_t bankSize, uint8_t numbanks)
 {
   filePath[0] = '\0';
   fileBrowser("/","Select fla file");
@@ -1504,6 +1429,7 @@ void writeFLASH_GBA (unsigned long bankSize, uint8_t numbanks)
       
           // Wait
           busyCheck_GBA(c);
+          draw_progressbar(currAddress + c + bankSize*bank, bankSize*numbanks, 5);
         }
       }
 
@@ -1512,9 +1438,9 @@ void writeFLASH_GBA (unsigned long bankSize, uint8_t numbanks)
 
     // Close the file:
     f_close(&tf);
-    OledShowString(0,5,"Done!",8);
+    OledShowString(0,6,"Done!",8);
   } else {
-    OledShowString(0,5,"Error!",8);
+    OledShowString(0,6,"Error!",8);
     print_Error("File doesnt exist!", false);
   }
 
@@ -1606,8 +1532,8 @@ void resetSpansion_GBA()
   delay(1000);
 }
 
-boolean sectorCheckMX29GL128E_GBA() {
-  boolean sectorProtect = 0;
+bool sectorCheckMX29GL128E_GBA() {
+  bool sectorProtect = 0;
   writeWord_GAB(0xAAA, 0xAA);
   writeWord_GAB(0x555, 0x55);
   writeWord_GAB(0xAAA, 0x90);
@@ -1706,7 +1632,7 @@ void idFlashrom_GBA()
   printf("GBA flash ID = 0x%s, ROMType : 0x%04x\n",flashid,romType);
 }
 
-boolean blankcheckFlashrom_GBA() 
+bool blankcheckFlashrom_GBA() 
 {
   for (unsigned long currSector = 0; currSector < fileSize; currSector += 0x20000) 
   {
@@ -1741,7 +1667,7 @@ void eraseIntel4000_GBA()
     writeWord_GBA(currBlock, 0xD0);
 
     // Read the status register
-    word statusReg = readWord_GBA(currBlock);
+    halfword statusReg = readWord_GBA(currBlock);
     while ((statusReg | 0xFF7F) != 0xFFFF) {
       statusReg = readWord_GBA(currBlock);
     }
@@ -1762,7 +1688,7 @@ void eraseIntel4000_GBA()
     writeWord_GBA(currBlock, 0xD0);
 
     // Read the status register
-    word statusReg = readWord_GBA(currBlock);
+    halfword statusReg = readWord_GBA(currBlock);
     while ((statusReg | 0xFF7F) != 0xFFFF) {
       statusReg = readWord_GBA(currBlock);
     }
@@ -1786,7 +1712,7 @@ void eraseIntel4000_GBA()
       writeWord_GBA(currBlock, 0xD0);
 
       // Read the status register
-      word statusReg = readWord_GBA(currBlock);
+      halfword statusReg = readWord_GBA(currBlock);
       while ((statusReg | 0xFF7F) != 0xFFFF) {
         statusReg = readWord_GBA(currBlock);
       }
@@ -1805,7 +1731,7 @@ void eraseIntel4000_GBA()
       writeWord_GBA(currBlock, 0xD0);
 
       // Read the status register
-      word statusReg = readWord_GBA(currBlock);
+      halfword statusReg = readWord_GBA(currBlock);
       while ((statusReg | 0xFF7F) != 0xFFFF) {
         statusReg = readWord_GBA(currBlock);
       }
@@ -1833,7 +1759,7 @@ void eraseIntel4400_GBA()
     writeWord_GBA(currBlock, 0xD0);
 
     // Read the status register
-    word statusReg = readWord_GBA(currBlock);
+    halfword statusReg = readWord_GBA(currBlock);
     while ((statusReg | 0xFF7F) != 0xFFFF) {
       statusReg = readWord_GBA(currBlock);
     }
@@ -1854,7 +1780,7 @@ void eraseIntel4400_GBA()
     writeWord_GBA(currBlock, 0xD0);
 
     // Read the status register
-    word statusReg = readWord_GBA(currBlock);
+    halfword statusReg = readWord_GBA(currBlock);
     while ((statusReg | 0xFF7F) != 0xFFFF) {
       statusReg = readWord_GBA(currBlock);
     }
@@ -1878,7 +1804,7 @@ void eraseIntel4400_GBA()
       writeWord_GBA(currBlock, 0xD0);
 
       // Read the status register
-      word statusReg = readWord_GBA(currBlock);
+      halfword statusReg = readWord_GBA(currBlock);
       while ((statusReg | 0xFF7F) != 0xFFFF) {
         statusReg = readWord_GBA(currBlock);
       }
@@ -1897,7 +1823,7 @@ void eraseIntel4400_GBA()
       writeWord_GBA(currBlock, 0xD0);
 
       // Read the status register
-      word statusReg = readWord_GBA(currBlock);
+      halfword statusReg = readWord_GBA(currBlock);
       while ((statusReg | 0xFF7F) != 0xFFFF) {
         statusReg = readWord_GBA(currBlock);
       }
@@ -1930,7 +1856,7 @@ void sectorEraseMSP55LV128_GBA(unsigned long lastSector)
     showPercent(currSector,lastSector,68,2);
 
     // Read the status register
-    word statusReg = readWord_GAB(currSector);
+    halfword statusReg = readWord_GAB(currSector);
     while ((statusReg | 0xFF7F) != 0xFFFF) {
     
       delayMicroseconds(1);        
@@ -1967,7 +1893,7 @@ void sectorEraseTest_GBA(unsigned long lastSector)
     showPercent(currSector,lastSector,88,4);
 
     // Read the status register
-    word statusReg = readWord_GAB(currSector);
+    halfword statusReg = readWord_GAB(currSector);
     while ((statusReg | 0xFF7F) != 0xFFFF) {
     
       delayMicroseconds(1);        
@@ -1996,7 +1922,7 @@ void sectorEraseMX29GL128E_GBA(unsigned long lastSector)
     LED_RED_BLINK;
     showPercent(currSector,lastSector,68,2);
     // Read the status register
-    word statusReg = readWord_GAB(currSector);
+    halfword statusReg = readWord_GAB(currSector);
     while ((statusReg | 0xFF7F) != 0xFFFF) {
       statusReg = readWord_GAB(currSector);
     }
@@ -2021,7 +1947,7 @@ void sectorEraseSpansion_GBA(unsigned long lastSector)
     LED_RED_BLINK;
     showPercent(currSector,lastSector,68,2);
     // Read the status register
-    word statusReg = readWord_GBA(currSector);
+    halfword statusReg = readWord_GBA(currSector);
     while ((statusReg | 0xFF7F) != 0xFFFF) {
       statusReg = readWord_GBA(currSector);
     }
@@ -2044,7 +1970,7 @@ void sectorEraseMX29GL128E_GBA_1(unsigned long lastSector)
     LED_RED_BLINK;
     showPercent(currSector,lastSector,68,2);
     // Read the status register
-    word statusReg = readWord_GAB(currSector);
+    halfword statusReg = readWord_GAB(currSector);
     while ((statusReg | 0xFF7F) != 0xFFFF) {
       statusReg = readWord_GAB(currSector);
     }
@@ -2076,18 +2002,18 @@ void writeIntel4000_GBA(FIL * ptf)
         writeWord_GBA(currBlock + currSdBuffer + currWriteBuffer, 0xE8);
 
         // Check Status register
-        word statusReg = readWord_GBA(currBlock + currSdBuffer + currWriteBuffer);
+        halfword statusReg = readWord_GBA(currBlock + currSdBuffer + currWriteBuffer);
         while ((statusReg | 0xFF7F) != 0xFFFF) {
           statusReg = readWord_GBA(currBlock + currSdBuffer + currWriteBuffer);
         }
 
-        // Write word count (minus 1)
+        // Write halfword count (minus 1)
         writeWord_GBA(currBlock + currSdBuffer + currWriteBuffer, 0x1F);
 
         // Write buffer
         for (byte currByte = 0; currByte < 64; currByte += 2) {
-          // Join two bytes into one word
-          word currWord = ( ( sdBuffer[currWriteBuffer + currByte + 1] & 0xFF ) << 8 ) | ( sdBuffer[currWriteBuffer + currByte] & 0xFF );
+          // Join two bytes into one halfword
+          halfword currWord = ( ( sdBuffer[currWriteBuffer + currByte + 1] & 0xFF ) << 8 ) | ( sdBuffer[currWriteBuffer + currByte] & 0xFF );
           writeWord_GBA(currBlock + currSdBuffer + currWriteBuffer + currByte, currWord);
         }
 
@@ -2134,17 +2060,17 @@ void writeMSP55LV128_GBA(FIL * ptf)
         writeWord_GAB(currSector, 0x25);
         delayMicroseconds(1);
 
-        // Write word count (minus 1)
+        // Write halfword count (minus 1)
         writeWord_GAB(currSector, 0xF);
 
         // Write buffer
-        word currWord;
+        halfword currWord;
         for (byte currByte = 0; currByte < 16; currByte++) 
         {
-          // Join two bytes into one word
+          // Join two bytes into one halfword
           //delay_GBA();
           delayMicroseconds(1);
-          currWord = ((word *)sdBuffer)[(currWriteBuffer>>1) + currByte];
+          currWord = ((halfword *)sdBuffer)[(currWriteBuffer>>1) + currByte];
           writeWord_GBA(currSector + currSdBuffer + currWriteBuffer + currByte*2, currWord);
         }
 
@@ -2157,7 +2083,7 @@ void writeMSP55LV128_GBA(FIL * ptf)
 
 
         // Read the status register
-        word statusReg = readWord_GAB(currSector + currSdBuffer + currWriteBuffer + 30);
+        halfword statusReg = readWord_GAB(currSector + currSdBuffer + currWriteBuffer + 30);
        // int i= 0;
 
         while ((statusReg | 0xFF7F) != (currWord | 0xFF7F)) 
@@ -2260,14 +2186,14 @@ void writeMX29GL128E_GBA(FIL * ptf)
         writeWord_GAB(0x555, 0x55);
         writeWord_GAB(currSector, 0x25);
 
-        // Write word count (minus 1)
+        // Write halfword count (minus 1)
         writeWord_GAB(currSector, 0x1F);
 
         // Write buffer
-        word currWord;
+        halfword currWord;
         for (byte cnt = 0; cnt < 32; cnt ++) {
-          // Join two bytes into one word
-          currWord = *(word *)(sdBuffer + currWriteBuffer + cnt*2);
+          // Join two bytes into one halfword
+          currWord = *(halfword *)(sdBuffer + currWriteBuffer + cnt*2);
           writeWord_GBA(currSector + currSdBuffer + currWriteBuffer + cnt*2, currWord);
         }
 
@@ -2277,7 +2203,7 @@ void writeMX29GL128E_GBA(FIL * ptf)
         delay(1000);
 
         // Read the status register
-        word statusReg = readWord_GAB(currSector + currSdBuffer + currWriteBuffer + 62);
+        halfword statusReg = readWord_GAB(currSector + currSdBuffer + currWriteBuffer + 62);
 
         while ((statusReg | 0xFF7F) != (currWord | 0xFF7F)) {
           delay_GBA();
@@ -2309,7 +2235,7 @@ void writeMX29GL128E_GBA_1(FIL * ptf)
       // Write 32 words at a time
       for (int currWriteBuffer = 0; currWriteBuffer < 512; currWriteBuffer += 2) {
 
-        word currWord = *(word *)(sdBuffer + currWriteBuffer);
+        halfword currWord = *(halfword *)(sdBuffer + currWriteBuffer);
         // Write Buffer command
         writeWord_GAB(0xAAA, 0xAA);
         writeWord_GAB(0x555, 0x55);
@@ -2318,7 +2244,7 @@ void writeMX29GL128E_GBA_1(FIL * ptf)
         delayMicroseconds(10);
 
         // Read the status register
-        word statusReg = readWord_GAB(currSector + currSdBuffer + currWriteBuffer);
+        halfword statusReg = readWord_GAB(currSector + currSdBuffer + currWriteBuffer);
 
         while ((statusReg | 0xFF7F) != (currWord | 0xFF7F)) {
           delay_GBA();
@@ -2357,16 +2283,16 @@ void writeSpansion_GBA(FIL * ptf)
         writeWord_GBA(currSector, 0x25);
         delayMicroseconds(1);
 
-        // Write word count (minus 1)
+        // Write halfword count (minus 1)
         writeWord_GBA(currSector, 0xF);
 
         // Write buffer
-        word currWord;
+        halfword currWord;
         for (byte currByte = 0; currByte < 16; currByte++) 
         {
-          // Join two bytes into one word
+          // Join two bytes into one halfword
           delayMicroseconds(1);
-          currWord = ((word *)sdBuffer)[(currWriteBuffer>>1) + currByte];
+          currWord = ((halfword *)sdBuffer)[(currWriteBuffer>>1) + currByte];
           writeWord_GBA(currSector + currSdBuffer + currWriteBuffer + currByte*2, currWord);
         }
 
@@ -2378,7 +2304,7 @@ void writeSpansion_GBA(FIL * ptf)
         delayMicroseconds(1);
 
         // Read the status register
-        word statusReg = readWord_GBA(currSector + currSdBuffer + currWriteBuffer + 30);
+        halfword statusReg = readWord_GBA(currSector + currSdBuffer + currWriteBuffer + 30);
 
         while ((statusReg | 0xFF7F) != (currWord | 0xFF7F)) {
           delayMicroseconds(1);
@@ -2437,7 +2363,7 @@ void writeSpansion_GBA(FIL * ptf)
   showPercent(1,1,68,3);
 }
 
-boolean verifyFlashrom_GBA() 
+bool verifyFlashrom_GBA() 
 {
   // Open file on sd card
   FIL tf;
@@ -2458,8 +2384,8 @@ boolean verifyFlashrom_GBA()
 
         for (int currByte = 0; currByte < (512>>1); currByte ++) 
         {
-          // Join two bytes into one word
-          word currWord =  ((word *)sdBuffer)[currByte];
+          // Join two bytes into one halfword
+          halfword currWord =  ((halfword *)sdBuffer)[currByte];
 
           delayMicroseconds(1);
 
@@ -2492,7 +2418,7 @@ boolean verifyFlashrom_GBA()
 
 
 uint16_t tbuf[256] = {0};
-boolean verifyFlashrom_GBA_new() 
+bool verifyFlashrom_GBA_new() 
 {
   // Open file on sd card
   FIL tf;
@@ -2514,8 +2440,8 @@ boolean verifyFlashrom_GBA_new()
 
         for (int i = 0; i < (512>>1); i++) 
         {
-          // Join two bytes into one word
-          word currWord =  ((word *)sdBuffer)[i];
+          // Join two bytes into one halfword
+          halfword currWord =  ((halfword *)sdBuffer)[i];
           if (tbuf[i] != currWord) {
             writeErrors++;
             f_close(&tf);
@@ -2542,9 +2468,9 @@ boolean verifyFlashrom_GBA_new()
   }
 }
 
-boolean verifyFlashromTest_GBA(uint32_t testSize) 
+bool verifyFlashromTest_GBA(uint32_t testSize) 
 {
-  word wWord = 0;
+  halfword wWord = 0;
   uint32_t wErrors = 0;
   for (unsigned long currSector = 0; currSector < testSize; currSector += 131072) 
   {
@@ -2556,7 +2482,7 @@ boolean verifyFlashromTest_GBA(uint32_t testSize)
       readWord_buf_GBA(currSector + currSdBuffer,tbuf,256);
       for (int i = 0; i < (512>>1); i++) 
       {
-        // Join two bytes into one word
+        // Join two bytes into one halfword
         if (tbuf[i] != (wWord & 0x7FFF)) {
           wErrors++;
           return 0;
@@ -2833,8 +2759,8 @@ void writeTEST_GBA(uint32_t testSize)
     // Blink led
     LED_BLUE_BLINK;
     showPercent(currSector,testSize,88,5);
-    word wWord = 0;
-    word tw = 0;
+    halfword wWord = 0;
+    halfword tw = 0;
 
     // Write to flashrom
     for (unsigned long currSdBuffer = 0; currSdBuffer < 0x10000; currSdBuffer += 32) 
@@ -2848,13 +2774,13 @@ void writeTEST_GBA(uint32_t testSize)
         writeWord_GAB(currSector, 0x25);
         delayMicroseconds(1);
 
-        // Write word count (minus 1)
+        // Write halfword count (minus 1)
         writeWord_GAB(currSector, 0xF);
 
         // Write buffer
         for (byte currByte = 0; currByte < 32; currByte+=2) 
         {
-          // Join two bytes into one word
+          // Join two bytes into one halfword
           delayMicroseconds(1);
           tw = wWord;
           writeWord_GBA(currSector + currSdBuffer + currByte, wWord);
@@ -2871,7 +2797,7 @@ void writeTEST_GBA(uint32_t testSize)
 
 
         // Read the status register
-        word statusReg = readWord_GAB(currSector + currSdBuffer + 30);
+        halfword statusReg = readWord_GAB(currSector + currSdBuffer + 30);
        // int i= 0;
 
 
@@ -2973,7 +2899,7 @@ void flashTest_GBA(uint32_t testSize)
 /******************************************
    Setup
  *****************************************/
-uint8_t setup_GBA() 
+void setup_GBA() 
 {
   //
   char tmsg[64] = {0};
@@ -3048,7 +2974,7 @@ uint8_t setup_GBA()
   WaitOKBtn();
 }
 
-void TestMemGBA(boolean bFast)
+void TestMemGBA(bool bFast)
 {
   //
   setup_GBA();
@@ -3098,7 +3024,7 @@ uint8_t gbaMenu() {
   // create menu with title and 4 options to choose from
 
   uint8_t bret = 0;
-  unsigned char retMenu = questionBox_OLED("GBA Cart Reader", menuOptionsGBA, 6, 1, 1, 1);
+  uint8_t retMenu = questionBox_OLED("GBA Cart Reader", menuOptionsGBA, 6, 1, 1, 1);
   char tmsg[32] = {0};
 
   // wait for user choice to come back from the question box menu
@@ -3124,7 +3050,7 @@ uint8_t gbaMenu() {
         case 0:
           // create submenu with title and 4 options to choose from
           {
-            unsigned char GBARomMenu = questionBox_OLED("Select ROM size", romOptionsGBA, 6, 1, 1, 1);
+            uint8_t GBARomMenu = questionBox_OLED("Select ROM size", romOptionsGBA, 6, 1, 1, 1);
             // wait for user choice to come back from the question box menu
             switch (GBARomMenu)
             {
@@ -3200,7 +3126,7 @@ uint8_t gbaMenu() {
       if (saveType == 0) 
       {
         // create submenu with title and 6 options to choose from
-        unsigned char GBASaveMenu = questionBox_OLED("Select save type:", saveOptionsGBA, 6, 1, 1, 1);
+        uint8_t GBASaveMenu = questionBox_OLED("Select save type:", saveOptionsGBA, 6, 1, 1, 1);
         // wait for user choice to come back from the question box menu
         switch (GBASaveMenu)
         {
@@ -3253,30 +3179,25 @@ uint8_t gbaMenu() {
 
         case 3:
           // 256K SRAM/FRAM
-          readSRAM_GBA(1, 32768, 0);
+          readSRAM_GBA(0x8000, 0);
           setROM_GBA();
           break;
 
         case 4:
           // 512K FLASH
-          readFLASH_GBA(1, 65536, 0);
+          readFLASH_GBA(0x10000, 1);
           setROM_GBA();
           break;
 
         case 5:
           // 1024K FLASH (divided into two banks)
-          switchBank_GBA(0x0);
-          setROM_GBA();
-          readFLASH_GBA(1, 65536, 0);
-          switchBank_GBA(0x1);
-          setROM_GBA();
-          readFLASH_GBA(0, 65536, 65536);
+          readFLASH_GBA(0x10000, 2);
           setROM_GBA();
           break;
 
         case 6:
           // 512K SRAM/FRAM
-          readSRAM_GBA(1, 65536, 0);
+          readSRAM_GBA(0x10000, 0);
           setROM_GBA();
           break;
       }
@@ -3289,7 +3210,7 @@ uint8_t gbaMenu() {
       if (saveType == 0) 
       {
         // create submenu with title and 6 options to choose from
-        unsigned char GBASavesMenu = questionBox_OLED("Select save type:", saveOptionsGBA, 6, 1, 1, 1);
+        uint8_t GBASavesMenu = questionBox_OLED("Select save type:", saveOptionsGBA, 6, 1, 1, 1);
         // wait for user choice to come back from the question box menu
         switch (GBASavesMenu)
         {
@@ -3366,7 +3287,7 @@ uint8_t gbaMenu() {
 
         case 3:
           // 256K SRAM/FRAM
-          writeSRAM_GBA(1, 32768, 0);
+          writeSRAM_GBA(1, 0x8000, 0);
           writeErrors = verifySRAM_GBA(32768, 0);
           if (writeErrors == 0) 
           {
@@ -3413,7 +3334,7 @@ uint8_t gbaMenu() {
 
         case 6:
           // 512K SRAM/FRAM
-          writeSRAM_GBA(1, 65536, 0);
+          writeSRAM_GBA(1, 0x10000, 0);
           writeErrors = verifySRAM_GBA(65536, 0);
           if (writeErrors == 0) 
           {
@@ -3437,7 +3358,7 @@ uint8_t gbaMenu() {
       {
        
         // create submenu with title and 7 options to choose from
-        unsigned char GBASaveMenu = questionBox_OLED("Select save type:", saveOptionsGBA, 6, 1, 1, 1);
+        uint8_t GBASaveMenu = questionBox_OLED("Select save type:", saveOptionsGBA, 6, 1, 1, 1);
 
         // wait for user choice to come back from the question box menu
         switch (GBASaveMenu)

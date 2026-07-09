@@ -37,6 +37,7 @@ Output/Release/Obj/update/Operate.o: \
   D:\Software\Segger\ Embedded\ Studio\include\string.h \
   D:\Software\Segger\ Embedded\ Studio\burnmaster_src\CartReaderApp\Common.h \
   D:\Software\Segger\ Embedded\ Studio\burnmaster_src\CartReaderApp\Display.h \
-  D:\Software\Segger\ Embedded\ Studio\burnmaster_src\CartReaderApp\Operate.h \
   D:\Software\Segger\ Embedded\ Studio\burnmaster_src\CartReaderApp\fatfs\ff.h \
-  D:\Software\Segger\ Embedded\ Studio\burnmaster_src\CartReaderApp\fatfs\ffconf.h
+  D:\Software\Segger\ Embedded\ Studio\burnmaster_src\CartReaderApp\fatfs\ffconf.h \
+  D:\Software\Segger\ Embedded\ Studio\burnmaster_src\CartReaderApp\Operate.h \
+  D:\Software\Segger\ Embedded\ Studio\burnmaster_src\CartReaderApp\flashparam.h

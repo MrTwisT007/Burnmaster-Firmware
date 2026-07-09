@@ -34,4 +34,9 @@ Output/Release/Obj/update/flashparam.o: \
   D:\Software\Segger\ Embedded\ Studio\burnmaster_src\CartReaderApp\GD32F10x\Device\Include\gd32f10x_timer.h \
   D:\Software\Segger\ Embedded\ Studio\burnmaster_src\CartReaderApp\GD32F10x\Device\Include\gd32f10x_usart.h \
   D:\Software\Segger\ Embedded\ Studio\burnmaster_src\CartReaderApp\GD32F10x\Device\Include\gd32f10x_wwdgt.h \
-  D:\Software\Segger\ Embedded\ Studio\burnmaster_src\CartReaderApp\flashparam.h
+  D:\Software\Segger\ Embedded\ Studio\burnmaster_src\CartReaderApp\flashparam.h \
+  D:\Software\Segger\ Embedded\ Studio\burnmaster_src\CartReaderApp\Common.h \
+  D:\Software\Segger\ Embedded\ Studio\include\stdlib.h \
+  D:\Software\Segger\ Embedded\ Studio\burnmaster_src\CartReaderApp\Display.h \
+  D:\Software\Segger\ Embedded\ Studio\burnmaster_src\CartReaderApp\fatfs\ff.h \
+  D:\Software\Segger\ Embedded\ Studio\burnmaster_src\CartReaderApp\fatfs\ffconf.h

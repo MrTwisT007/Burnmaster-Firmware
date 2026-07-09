@@ -4,6 +4,7 @@
 #include <stdlib.h>
 #include "Common.h"
 #include "Display.h"
+#include "Operate.h"
 
 
 
@@ -664,7 +665,7 @@ void OledShowChar(uint8_t x,uint8_t y,uint8_t chr,uint8_t Char_Size)
 
 
 //显示一个字符串
-uint8_t OledShowString(uint8_t x,uint8_t y,char *str,uint8_t Char_Size)
+uint8_t OledShowString(uint8_t x,uint8_t y,const char *str,uint8_t Char_Size)
 {
   unsigned char j=0;
   
@@ -832,13 +833,11 @@ void draw_progressbar(uint32_t processed, uint32_t total, uint8_t line) {
   // Progress bar
   current = (processed >= total) ? steps : (processed * steps / total);
 
-  //printf("\r\nCur:%d-Pri:%d / Ttl:%d",current,previous,total);
-
   //Draw "*" if needed
   if (current > previous) {
     for (i = previous + 1; i <= current; i++) {
       // steps are 20, so 20 - 1 = 19.
-      if (i == (19)) {
+      if (i >= (19)) {
         //If end of progress bar, finish progress bar by drawing "]"
         OledShowString(114,line,"]",8);
       }

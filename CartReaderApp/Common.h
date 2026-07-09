@@ -5,14 +5,13 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include "Display.h"
-#include "Operate.h"
 #include "fatfs/ff.h"
 
 
 
 #define byte uint8_t
-#define word uint16_t
-#define boolean uint8_t
+#define halfword uint16_t
+#define word uint32_t
 #define bool uint8_t
 #define true (1)
 #define false (0)
@@ -22,8 +21,13 @@
 #define FILEPATH_LENGTH 128
 #define FILEOPTS_LENGTH 20
 
+typedef struct {
+  uint32_t foldern;
+  uint32_t optype;
+  char     custname[3][16];
+} saveFolderConfig;
 
-extern uint32_t foldern;
+extern saveFolderConfig conf;
 extern char folder[36];
 extern FATFS fs;
 
@@ -32,10 +36,10 @@ extern char filePath[FILEPATH_LENGTH];
 extern byte currPage;
 extern byte lastPage;
 extern byte numPages;
-extern boolean root;
-extern boolean filebrowse;
+extern bool root;
+extern bool filebrowse;
 extern bool errorLvl;
-extern boolean ignoreError;
+extern bool ignoreError;
 extern char flashid[5];
 extern int manufacturerid;
 
@@ -47,8 +51,7 @@ extern char romName[64];
 extern unsigned long sramSize;
 extern int romType;
 extern byte saveType;
-extern word romSize;
-extern word numBanks;
+extern halfword romSize;
 extern char checksumStr[5];
 
 
@@ -64,5 +67,6 @@ void ResetSystem();
 void SysClockFree();
 
 void delayMicroseconds(uint16_t us);
+FRESULT createStoreDirectory(FIL* tfile, char* romName, char* extension, char* systemName, char* fileType);
 
 #endif

@@ -14,9 +14,9 @@
 
 extern int sramBanks;
 extern int romBanks;
-extern word lastByte;
+extern halfword lastByte;
 
-void TestMemGB(boolean bFast);
+void TestMemGB(bool bFast);
 uint8_t gbFlashScreen();
 uint8_t gbScreen();
 

@@ -1,6 +1,7 @@
 #include "fatfs/ff.h"
 
-#pragma onece
+//#pragma onece
+
 
 #define BTNNONE (0)
 #define BTNUP (1)
@@ -24,17 +25,31 @@
 #define MENU_PGUP (102)
 #define MENU_PGDN (103)
 
+typedef enum {
+  NUM_VAL = 0,
+  TXT_VAL = 1
+} sliderType;
 
+typedef enum {
+  DISABLED  = 0,
+  INCREMENT = 1
+} folderType;
 
 void KeyBrdInit();
 uint8_t keyState();
 uint8_t checkButton(int previousbutton);
 void WaitOKBtn();
 
+
 // Display a question box with selectable answers. Make sure default choice is in (0, num_answers]
-unsigned char questionBox_OLED(char * question, const char* const answers[7], int num_answers, int default_choice, uint8_t rollselect, uint8_t clrSrc);
+uint8_t questionBox_OLED(char * question, const char* const answers[], int num_answers, int default_choice, uint8_t rollselect, uint8_t clrSrc);
+uint8_t checkButton(int previousbutton);
+void    KeyBrdInit();
+uint8_t keyState();
+void    WaitOKBtn();
 uint8_t my_mkdir(char * dir);
-void fileBrowser(char * start_dir , const char * browserTitle);
+void    fileBrowser(char * start_dir , const char * browserTitle);
 uint8_t populateFileList(DIR tdir, FILINFO finfo, char * browserTitle);
 uint8_t openBrowserMenu(DIR tdir, FILINFO finfo, uint8_t filecount, char * browserTitle);
-void upOneDir(DIR tdir);
+void    upOneDir(DIR tdir);
+uint8_t saveFolderOptions();

@@ -13,10 +13,11 @@
 #define A0         GPIO_PIN_8
 #define AD23       GPIO_PIN_15
 
-void TestMemGBA(boolean bFast);
+void TestMemGBA(bool bFast);
 uint8_t gbaScreen();
-uint8_t setup_GBA();
+void setup_GBA();
 unsigned long verifyFLASH_GBA(unsigned long flashSize, uint32_t pos, uint8_t bank, uint8_t numbanks);
+
 
 #endif
 

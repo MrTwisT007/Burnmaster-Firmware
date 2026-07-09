@@ -6,6 +6,7 @@
 #include "Common.h"
 #include "Display.h"
 #include "Operate.h"
+#include "flashparam.h"
 
 
 #define DEBOUNCE_US 10000
@@ -99,10 +100,8 @@ void WaitOKBtn()
   }
 }
 
-
-
-// Display a question box with selectable itemNames. Make sure default choice is in (0, numSelections]
-unsigned char questionBox_OLED(char * question, const char* const itemNames[7], int numSelections, int selection, uint8_t wrapAround, uint8_t clrSrc) 
+// Display a title box with selectable itemNames. Make sure default choice is in (0, numSelections]
+uint8_t questionBox_OLED(char * title, const char* const itemNames[], int numSelections, int selection, uint8_t wrapAround, uint8_t clrSrc) 
 {
   //clear the screen
   if(clrSrc > 0)OledClear();
@@ -111,7 +110,7 @@ unsigned char questionBox_OLED(char * question, const char* const itemNames[7], 
   //rgbLed(selection);
 
   // print menu
-  OledShowString(0,0,question,8);
+  OledShowString(0,0,title,8);
   char tanswer[21] = {0};
   for (unsigned char i = 0; i < numSelections; i++) {
     memcpy(tanswer,itemNames[i],20);
@@ -249,7 +248,156 @@ unsigned char questionBox_OLED(char * question, const char* const itemNames[7], 
   return choice;
 }
 
+//Display a selector with left/right selectable entries. Suitable for selecting a number or from a list of items
+uint32_t sliderBox_OLED(char* title, sliderType type, uint32_t startValue, char* extras[], uint8_t numValues, uint8_t clrSrc){
+  uint32_t selection = startValue;
+  char buf[32];
+  
+  if(clrSrc > 0)OledClear();
 
+  OledShowString(0,0,title,8);
+
+  while (1) 
+  {
+    //Select a number with left/right keys
+    if(type == NUM_VAL) {
+      sprintf(buf,"<<%10u       >>",selection);
+      OledShowString(0,3,buf,8);
+      buttonPressed = checkButton(buttonPressed);
+      switch(buttonPressed) {
+        case BTNRIGHT:
+          selection++;
+          //Clamp the number
+          selection &= numValues;
+          break;
+
+        case BTNLEFT:
+          selection--;
+          selection &= numValues;
+          break;
+
+        case BTNOK:
+          return selection;
+
+        case BTNCANCEL:
+          return startValue;
+      }
+    }
+    //Select from a list of options
+    if(type == TXT_VAL) {
+      //Justify the selected item in the center of the row
+      uint8_t len = strlen(extras[selection % numValues]);
+      uint8_t leftpad = (17-len)/2;
+      uint8_t rightpad = (17-len)/2 + (17-len)%2;
+      sprintf(buf,"<<%*s%s%*s>>", leftpad, "", extras[selection % numValues], rightpad, "");
+      OledShowString(0,3,buf,8);
+      buttonPressed = checkButton(buttonPressed);
+      switch(buttonPressed) {
+        case BTNRIGHT:
+          selection++;
+          break;
+
+        case BTNLEFT:
+          selection--;
+          break;
+
+        case BTNOK:
+          return selection %= numValues;
+
+        case BTNCANCEL:
+          return startValue %= numValues;
+      }
+    }
+  }
+}
+
+uint8_t editBox_OLED(char* title, char* inStr, uint8_t clrSrc) {
+  if(clrSrc > 0)OledClear();
+  OledShowString(0,0,title,8);
+  char tmsg[16];
+
+  char buf[16] = {0};
+  strcpy(buf,inStr);
+  uint8_t bufLen = strlen(buf);
+
+  uint8_t litPos = 0;
+
+  while (1) {
+    sprintf(tmsg, "%-16s", buf);
+    OledShowString(0,3,tmsg,8);
+    OledShowString(litPos*6,4,"^",8);
+    buttonPressed = checkButton(buttonPressed);
+    switch(buttonPressed) {
+      case BTNRIGHT:
+        if(litPos<bufLen){
+          OledShowString(litPos*6,4," ",8);
+          if(litPos<14) //Don't overwrite NULL char
+            litPos++;
+        }
+        break;
+  
+      case BTNLEFT:
+        if(litPos>0){
+          OledShowString(litPos*6,4," ",8);
+          litPos--;
+        }
+        break;
+
+      case BTNUP:
+        if(buf[litPos] >= 'Z'){
+          for (uint8_t i = litPos; i < 16; i++) {
+            buf[i] = 0x00;
+          }
+          bufLen = litPos;
+        }
+        else if(buf[litPos] == 0){
+          buf[litPos] = 'A';
+          if(litPos==bufLen)
+            bufLen++;
+        }
+        else buf[litPos]++;
+        break;
+
+      case BTNDOWN:
+        if(buf[litPos] == 0) {
+          buf[litPos] = 'Z';
+          if(litPos==bufLen)
+            bufLen++;
+        }
+        else if(buf[litPos] <= 'A'){
+          for (uint8_t i = litPos; i < 16; i++) {
+            buf[i] = 0x00;
+          }
+          bufLen = litPos;
+        }
+        else buf[litPos]--;
+        break;
+  
+      case BTNOK:
+        strcpy(inStr, buf);
+        return 1;
+  
+      case BTNCANCEL:
+        return 0;
+    }
+  }
+
+}
+
+//TODO: rework to replace the my_mkdir implementation
+//uint8_t my_mkdir(char * dir){
+//  char dircopy[128];
+//  strcpy(dircopy, dir);
+//  char* subdir = strtok(dircopy, "/");
+//  char fulldir[128] = "";
+//  while (subdir) {
+//    strcat(fulldir, subdir);
+//    f_mkdir(fulldir);
+//    strcat(fulldir, "/");
+//    subdir = strtok(NULL, "/");
+//  }
+//  return 0;
+//}
 
 uint8_t my_mkdir(char * dir)
 {
@@ -495,3 +643,98 @@ void upOneDir(DIR tdir){
   
   f_closedir(&tdir);
 }
+
+
+char folderOption1[32];
+char folderOption2[32];
+char folderOption3[32];
+char custname[3][16];
+char* folderOptions[3] = {folderOption1, folderOption2, folderOption3};
+char* folderTypes[5] = {"Static Number", "Increment", custname[0],custname[1], custname[2]};
+
+uint8_t saveFolderOptions() {
+  uint8_t mret;
+
+  while(1) {
+    conf = get_config();
+
+    switch (conf.optype) {
+      case DISABLED:
+        sprintf(folderOptions[0], "Static #: %3d", conf.foldern);
+        break;
+      case INCREMENT:
+        sprintf(folderOptions[0], "Current #: %3d", conf.foldern);
+        break;
+      default:
+        sprintf(folderOptions[0], "Folder name: %s", conf.custname[conf.optype-2]);
+        break;
+    }
+
+    sprintf(folderOptions[1], "Naming options");
+    sprintf(folderOptions[2], "Edit folder name");
+
+    mret = questionBox_OLED("Save Folder Options", (const char**)folderOptions, conf.optype < 2 ? 2:3, 1, 1, 1);
+    switch (mret) {
+      case MENU_CANCEL:
+        return 0;
+        break;
+
+      case MENU_1:
+        if(conf.optype < 2) {
+          conf.foldern = sliderBox_OLED("Set Value", NUM_VAL, conf.foldern, NULL, 0x7F, 1);
+          save_config(conf);
+        }
+        break;
+
+      case MENU_2:
+        for(uint8_t i=0; i<3; i++) {
+          strcpy(folderTypes[i+2], conf.custname[i]);
+        }
+        conf.optype = sliderBox_OLED("Folder name options", TXT_VAL, conf.optype, folderTypes, 5, 1);
+        save_config(conf);
+        break;
+
+      case MENU_3:
+        if (editBox_OLED("Edit folder name", conf.custname[conf.optype-2], 1) == 1)
+          save_config(conf);
+        break;
+    }
+  }
+}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+

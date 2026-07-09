@@ -2,6 +2,7 @@
 #define __FLASH_PARAM_H__
  
 #include <stdint.h>
+#include "Common.h"
  
 #ifdef __cplusplus
 extern "C"{
@@ -13,8 +14,11 @@ extern "C"{
 #define FMC_WRITE_END_ADDR	((uint32_t)0x0803FFFFU)
 
 
-void save_dword(uint32_t data);
-uint32_t load_dword();
+void save_dword(uint32_t data, uint32_t offset, uint8_t erasePage);
+uint32_t load_dword(uint8_t offset);
+
+saveFolderConfig get_config();
+void save_config(saveFolderConfig conf);
 
 
  

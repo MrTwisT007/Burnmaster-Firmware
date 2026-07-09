@@ -13,10 +13,11 @@ Purpose : Generic application start
 #include "fatfs/ff.h"
 #include <stdio.h>
 #include <stdlib.h>
+#include <string.h>
 #include "main.h"
 #include "Common.h"
-#include "Display.h"
 #include "Operate.h"
+#include "Display.h"
 #include "GB.h"
 #include "GBA.h"
 #include "fatfs/sdcard.h"
@@ -82,10 +83,11 @@ static const char gbxMenuItem1[] = "Game Boy (Color)";
 static const char gbxMenuItem2[] = "Game Boy Advance";
 static const char gbxMenuTestAll[] = "CartTest";
 static const char gbxMenuTestFast[] = "CartTestFast";
+static const char gbxMenuFolderOpts[] = "Options";
 static const char gbxAbout[] = "About...";
 
-static const char* const menuOptionsGBC[] = {gbxMenuItem1,gbxMenuTestFast,gbxMenuTestAll,gbxAbout};
-static const char* const menuOptionsGBA[] = {gbxMenuItem2,gbxMenuTestFast,gbxMenuTestAll,gbxAbout};
+static const char* const menuOptionsGBC[] = {gbxMenuItem1,gbxMenuTestFast,gbxMenuTestAll,gbxMenuFolderOpts,gbxAbout};
+static const char* const menuOptionsGBA[] = {gbxMenuItem2,gbxMenuTestFast,gbxMenuTestAll,gbxMenuFolderOpts,gbxAbout};
 static const char* const menuOptionsGBx[] = {gbxMenuItem1, gbxMenuItem2};
 
 
@@ -113,7 +115,7 @@ uint8_t gbxMenu()
   //
   uint8_t bret = 0;
   uint8_t gbxtype = GetGBType();
-  unsigned char gbType;
+  uint8_t gbType;
 
   // create menu with title and 4 options to choose from  
   // wait for user choice to come back from the question box menu
@@ -124,7 +126,7 @@ uint8_t gbxMenu()
     LED_BLUE_ON;
     OledClear();
     OledShowPicData(64,4,56,4,Icon_data_GBA);
-    gbType = questionBox_OLED("Portable Cart Flasher", menuOptionsGBA, 4, 1, 1, 0);    
+    gbType = questionBox_OLED("Portable Cart Flasher", menuOptionsGBA, 5, 1, 1, 0);    
     switch (gbType)
     {
       case 0:
@@ -143,6 +145,9 @@ uint8_t gbxMenu()
         TestMemGBA(false);
         break;
       case 4:
+        saveFolderOptions();
+        break;
+      case 5:
         aboutScreen();
         break;
     }
@@ -153,7 +158,7 @@ uint8_t gbxMenu()
     LED_GREEN_ON;
     OledClear();
     OledShowPicData(86,2,29,6,Icon_data_GBC);
-    gbType = questionBox_OLED("Portable Cart Flasher", menuOptionsGBC, 4, 1, 1, 0);    
+    gbType = questionBox_OLED("Portable Cart Flasher", menuOptionsGBC, 5, 1, 1, 0);
     switch (gbType)
     {
       case 0:
@@ -172,6 +177,9 @@ uint8_t gbxMenu()
         TestMemGB(false);
         break;
       case 4:
+        saveFolderOptions();
+        break;
+      case 5:
         aboutScreen();
         break;
     }
@@ -213,6 +221,7 @@ void gbxScreen()
     
     if(b>0)break;
   }
+  ResetSystem();
 }
 
 
@@ -226,7 +235,7 @@ static const char* const modeOptions[] = {modeItem1, modeItem2/*, modeItem3*/};
 // All included slots
 void mainMenu() {
   // create menu with title and 6 options to choose from
-  unsigned char modeMenu;
+  uint8_t modeMenu;
   // Copy menuOptions out of progmem
   //convertPgm(modeOptions, 7);
   LED_CLEAR();
@@ -498,11 +507,16 @@ void PriInit()
 
 
   rcu_periph_clock_enable(RCU_AF);
-  //gpio_pin_remap_config(GPIO_SWJ_SWDPENABLE_REMAP,ENABLE);
-  if (load_dword() == UINT32_MAX) {
-    save_dword(0);
+  conf = get_config();
+  //Fresh firmware will have this section all 0xFF, initialize manually
+  if (conf.foldern == UINT32_MAX) {
+    conf.foldern = 0;
+    conf.optype  = INCREMENT;
+    strcpy(conf.custname[0],"DUMP");
+    strcpy(conf.custname[1],"LATEST");
+    strcpy(conf.custname[2],"CUSTOM");
+    save_config(conf);
   }
-  foldern = load_dword();
 }
 
 int main(void) 

@@ -27,8 +27,8 @@ void delay_GBM()
 }
 
 
-// Read one word out of the cartridge
-byte readByte_GBM(word myAddress) 
+// Read one halfword out of the cartridge
+byte readByte_GBM(halfword myAddress) 
 {
   // Set data pins to Input
   GPIO_CTL1(DATA) = 0x44444444;
@@ -54,8 +54,8 @@ byte readByte_GBM(word myAddress)
   return tempByte;
 }
 
-// Write one word to data pins of the cartridge
-void writeByte_GBM(word myAddress, byte myData) 
+// Write one halfword to data pins of the cartridge
+void writeByte_GBM(halfword myAddress, byte myData) 
 {
   // Set data pins to Output
   GPIO_CTL1(DATA) = 0x33333333;
@@ -83,7 +83,7 @@ void writeByte_GBM(word myAddress, byte myData)
 /**********************
   HELPER FUNCTIONS
 **********************/
-void printSdBuffer(word startByte, word numBytes) 
+void printSdBuffer(halfword startByte, halfword numBytes) 
 {
   char tmsg[30] = {0};
   for (int i = 0; i < numBytes; i++) 
@@ -98,20 +98,20 @@ void printSdBuffer(word startByte, word numBytes)
   }
 }
 
-void readROM_GBM(word numBanks) 
+void readROM_GBM(halfword numBanks) 
 {
   OledShowString(0,0,"Reading Rom...",8);   
 
   // Get name, add extension and convert to char array for sd lib
-  foldern = load_dword();
+  conf = get_config();
   //
-  sprintf(fileName, "GBM%d", foldern);
+  sprintf(fileName, "GBM%d", conf.foldern);
   strcat(fileName, ".bin");
   my_mkdir("/NP");
   f_chdir("/NP");
   // write new folder number back to eeprom
-  foldern = foldern + 1;
-  save_dword(foldern);
+  conf.foldern = conf.foldern + conf.optype;
+  save_config(conf);
 
   FIL tf;
   // Open file on sd card
@@ -122,9 +122,9 @@ void readROM_GBM(word numBanks)
   else 
   {
     // Read rom
-    word currAddress = 0;
+    halfword currAddress = 0;
 
-    for (word currBank = 1; currBank < numBanks; currBank++) 
+    for (halfword currBank = 1; currBank < numBanks; currBank++) 
     {
       // Set rom bank
       writeByte_GBM(0x2100, currBank);
@@ -230,7 +230,7 @@ void send_GBM(byte myCommand)
   }
 }
 
-void send_GBM1(byte myCommand, word myAddress, byte myData) 
+void send_GBM1(byte myCommand, halfword myAddress, byte myData) 
 {
   byte myAddrLow = myAddress & 0xFF;
   byte myAddrHigh = (myAddress >> 8) & 0xFF;
@@ -273,7 +273,7 @@ void resetFlash_GBM() {
   delay(100000);
 }
 
-boolean readFlashID_GBM() 
+bool readFlashID_GBM() 
 {
   // Enable ports 0x0120 (F2)
   send_GBM(0x09);
@@ -339,7 +339,7 @@ void eraseFlash_GBM()
   resetFlash_GBM();
 }
 
-boolean blankcheckFlash_GBM() 
+bool blankcheckFlash_GBM() 
 {
   OledShowString(0,0,"Blankcheck...",8);
    
@@ -353,7 +353,7 @@ boolean blankcheckFlash_GBM()
   send_GBM(0x08);
 
   // Read rom
-  word currAddress = 0;
+  halfword currAddress = 0;
 
   for (byte currBank = 1; currBank < 64; currBank++) {
     // Set rom bank
@@ -419,7 +419,7 @@ void writeFlash_GBM()
     while ((readByte_GBM(0) & 0x80) != 0x80) {}
 
     // first bank: 0x0000-0x7FFF,
-    word currAddress = 0x0;
+    halfword currAddress = 0x0;
 
     // Write 63 banks
     for (byte currBank = 0x1; currBank < fileSize; currBank++) 
@@ -471,7 +471,7 @@ void writeFlash_GBM()
         send_GBM(0x08);
 
         // Fill flash buffer
-        for (word currByte = 0; currByte < 128; currByte++) {
+        for (halfword currByte = 0; currByte < 128; currByte++) {
           writeByte_GBM(currAddress + currByte, sdBuffer[currByte]);
         }
         // Execute write
@@ -515,16 +515,16 @@ void readMapping_GBM()
    
 
   // Get name, add extension and convert to char array for sd lib
-  foldern = load_dword();
+  conf = get_config();
   //
-  sprintf(fileName, "GBM%d", foldern);
+  sprintf(fileName, "GBM%d", conf.foldern);
   strcat(fileName, ".map");
   my_mkdir("/NP");
   f_chdir("NP");
 
   // write new folder number back to eeprom
-  foldern = foldern + 1;
-  save_dword(foldern);
+  conf.foldern = conf.foldern + conf.optype;
+  save_config(conf);
 
 
   FIL tf;
@@ -594,7 +594,7 @@ void eraseMapping_GBM()
   resetFlash_GBM();
 }
 
-boolean blankcheckMapping_GBM() 
+bool blankcheckMapping_GBM() 
 {
   OledShowString(0,0,"Blankcheck...",8);
    
@@ -707,7 +707,7 @@ void writeMapping_GBM()
     send_GBM(0x08);
 
     // Fill flash buffer
-    for (word currByte = 0; currByte < 128; currByte++) 
+    for (halfword currByte = 0; currByte < 128; currByte++) 
     {
       // Blink led
       LED_BLINK(LED1);
@@ -790,7 +790,7 @@ uint8_t gbmMenu()
 {
   // create menu with title and 7 options to choose from
   uint8_t bret = 0;
-  unsigned char gbmMenu = questionBox_OLED("GB Memory Menu -", menuOptionsGBM, 7, 1, 1, 1);
+  uint8_t gbmMenu = questionBox_OLED("GB Memory Menu -", menuOptionsGBM, 7, 1, 1, 1);
 
   // wait for user choice to come back from the question box menu
   switch (gbmMenu)

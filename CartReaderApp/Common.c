@@ -1,7 +1,7 @@
 #include "Common.h"
-
-
-
+#include "flashparam.h"
+#include <string.h>
+#include "Operate.h"
 
 //SD Card
 FIL myDir;
@@ -10,9 +10,8 @@ FIL myFile;
 FATFS fs;
 byte sdBuffer[512];
 
-
 //remember folder number to create a new folder for every save
-uint32_t foldern;
+saveFolderConfig conf;
 char folder[36];
 
 // File browser
@@ -21,8 +20,7 @@ char filePath[FILEPATH_LENGTH];
 byte currPage;
 byte lastPage;
 byte numPages;
-boolean root = 0;
-
+bool root = 0;
 
 // Common
 char romName[64];
@@ -30,16 +28,10 @@ unsigned long sramSize = 0;
 int romType = 0;
 int manufacturerid = 0;
 byte saveType;
-word romSize = 0;
-word numBanks = 128;
+halfword romSize = 0;
 char checksumStr[5];
 bool errorLvl = 0;
-boolean ignoreError = 0;
-//
-//
-//String CRC1 = "";
-//String CRC2 = "";
-//
+bool ignoreError = 0;
 char flashid[5];
 //char vendorID[5];
 //
@@ -105,30 +97,45 @@ void SysClockFree()
 
 void delayMicroseconds(uint16_t us)
 {
-  //
-  for(int i = 0;i<us;i++)
-  {    
-    __asm__("nop\n\t""nop\n\t""nop\n\t""nop\n\t""nop\n\t");
-    __asm__("nop\n\t""nop\n\t""nop\n\t""nop\n\t""nop\n\t");
-    __asm__("nop\n\t""nop\n\t""nop\n\t""nop\n\t""nop\n\t");
-    __asm__("nop\n\t""nop\n\t""nop\n\t""nop\n\t""nop\n\t");
-    __asm__("nop\n\t""nop\n\t""nop\n\t""nop\n\t""nop\n\t");
-    __asm__("nop\n\t""nop\n\t""nop\n\t""nop\n\t""nop\n\t");
-    __asm__("nop\n\t""nop\n\t""nop\n\t""nop\n\t""nop\n\t");
-    __asm__("nop\n\t""nop\n\t""nop\n\t""nop\n\t""nop\n\t");
-    __asm__("nop\n\t""nop\n\t""nop\n\t""nop\n\t""nop\n\t");
-    __asm__("nop\n\t""nop\n\t""nop\n\t""nop\n\t""nop\n\t");
-    __asm__("nop\n\t""nop\n\t""nop\n\t""nop\n\t""nop\n\t");
-    __asm__("nop\n\t""nop\n\t""nop\n\t""nop\n\t""nop\n\t");
-    __asm__("nop\n\t""nop\n\t""nop\n\t""nop\n\t""nop\n\t");
-    __asm__("nop\n\t""nop\n\t""nop\n\t""nop\n\t""nop\n\t");
-    __asm__("nop\n\t""nop\n\t""nop\n\t""nop\n\t""nop\n\t");
-    __asm__("nop\n\t""nop\n\t""nop\n\t""nop\n\t""nop\n\t");
-    __asm__("nop\n\t""nop\n\t""nop\n\t""nop\n\t""nop\n\t");
-    __asm__("nop\n\t""nop\n\t""nop\n\t""nop\n\t""nop\n\t");
-    __asm__("nop\n\t""nop\n\t""nop\n\t""nop\n\t""nop\n\t");
-    __asm__("nop\n\t""nop\n\t""nop\n\t""nop\n\t""nop\n\t");
-    __asm__("nop\n\t""nop\n\t""nop\n\t""nop\n\t""nop\n\t");
-    __asm__("nop\n\t""nop\n\t""nop\n\t""nop\n\t""nop\n\t");
+  delay(1);
+}
+
+FRESULT createStoreDirectory(FIL* tfile, char* romName, char* extension, char* systemName, char* fileType){
+  // Get name, add extension and convert to char array for sd lib
+  strcpy(fileName, romName);
+  strcat(fileName, extension);
+  char buf[100];
+
+  // create a new folder for the rom file
+  conf = get_config();
+  f_chdir("/");
+
+  sprintf(buf, "%s/%s/", systemName, fileType, romName);
+  if(conf.optype < 2) {
+    sprintf(folder, "%s/%d", romName, conf.foldern);
+  } else {
+    sprintf(folder, "%s/%s", romName, conf.custname[conf.optype-2]);
   }
+  strcat(buf, folder);
+
+  FRESULT res;
+  res = my_mkdir(buf);
+  res = f_chdir(buf);
+
+  OledClear();
+  OledShowString(0,0,"Saving to ",8);
+  OledShowString(4,1,folder,8);
+
+  // write new folder number back to eeprom
+  if(conf.optype<2){
+    conf.foldern += conf.optype;
+  }
+  save_config(conf);
+
+  //open file on sd card
+  res = f_open(tfile, fileName, FA_CREATE_ALWAYS|FA_WRITE);
+  if (res != FR_OK) {
+    print_Error("Can't create file", 1);
+  }
+  return res;
 }

@@ -36,6 +36,7 @@ Output/Release/Obj/update/main.o: \
   D:\Software\Segger\ Embedded\ Studio\burnmaster_src\CartReaderApp\fatfs\ffconf.h \
   D:\Software\Segger\ Embedded\ Studio\include\stdio.h \
   D:\Software\Segger\ Embedded\ Studio\include\stdlib.h \
+  D:\Software\Segger\ Embedded\ Studio\include\string.h \
   D:\Software\Segger\ Embedded\ Studio\burnmaster_src\CartReaderApp\main.h \
   D:\Software\Segger\ Embedded\ Studio\burnmaster_src\CartReaderApp\Common.h \
   D:\Software\Segger\ Embedded\ Studio\burnmaster_src\CartReaderApp\Display.h \

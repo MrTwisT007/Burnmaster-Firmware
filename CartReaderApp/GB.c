@@ -13,7 +13,7 @@
 
 int sramBanks;
 int romBanks;
-word lastByte = 0;
+halfword lastByte = 0;
 char msgbuf[128] = {0};
 
 
@@ -24,7 +24,7 @@ char msgbuf[128] = {0};
 #define dataOut_GB() GPIO_CTL1(DATA) = 0x33333333
 #define dataIn_GB() GPIO_CTL1(DATA) = 0x44444444
 
-void OutAddrBus(word myAddress)
+void OutAddrBus(halfword myAddress)
 {
   //
   GPIO_OCTL(ADDRLOW) = (GPIO_OCTL(ADDRLOW)&0xFFFF000F) + ((myAddress << 8) & 0xFF00) + ((myAddress >> 8) & 0xF0);
@@ -38,7 +38,7 @@ void delay_GB()
   __asm__("nop\n\t""nop\n\t""nop\n\t""nop\n\tnop\n\t");
 }
 
-byte readByte_GB(word myAddress) {
+byte readByte_GB(halfword myAddress) {
   OutAddrBus(myAddress);
   dataIn_GB();
 
@@ -109,7 +109,7 @@ void setROMBank(int banknum)
 }
 
 // Triggers CS and CLK pin
-byte readByteSRAM_GB(word myAddress) {
+byte readByteSRAM_GB(halfword myAddress) {
   OutAddrBus(myAddress);
   dataIn_GB();
 
@@ -434,44 +434,17 @@ void setup_GB() {
 *****************************************/
 // Read ROM
 void readROM_GB() {
-  // Get name, add extension and convert to char array for sd lib
-  strcpy(fileName, romName);
-  strcat(fileName, ".GB");
-
-  // create a new folder for the rom file
-  foldern = load_dword();
-  f_chdir("/");
-  sprintf(folder, "GB/ROM/%s/%d", romName, foldern);
-
-  FRESULT rst;
   FIL tfile;
+  FRESULT rst = createStoreDirectory(&tfile, romName, ".GB", "GB", "ROM");
 
-  rst = my_mkdir(folder);
-  rst = f_chdir(folder);
-
-  OledClear();
-  OledShowString(0,0,"Saving to ",8);
-  OledShowString(4,1,folder,8);
-  //printf("/..."));
-
-  // write new folder number back to eeprom
-  foldern = foldern + 1;
-  save_dword(foldern);
-
-  //open file on sd card
-  rst = f_open(&tfile,fileName, FA_CREATE_ALWAYS|FA_WRITE);
-  if (rst != FR_OK) {
-    print_Error("Can't create file", 1);
-  }
-
-  word romAddress = 0;
+  halfword romAddress = 0;
 
   //Initialize progress bar
   uint32_t processedProgressBar = 0;
-  uint32_t totalProgressBar = (uint32_t)(romBanks) * 16384;
+  uint32_t totalProgressBar = (uint32_t)(romBanks) * 0x4000;
   draw_progressbar(0, totalProgressBar,3);
 
-  for (word currBank = 1; currBank < romBanks; currBank++) {
+  for (halfword currBank = 1; currBank < romBanks; currBank++) {
     LED_GREEN_BLINK;
 
     // Set ROM bank for MBC2/3/4/5
@@ -501,6 +474,7 @@ void readROM_GB() {
       processedProgressBar += 512;
       draw_progressbar(processedProgressBar, totalProgressBar,3);
     }
+    OledShowString(0,0,"Saved to ",8);
   }
 
   // Close the file:
@@ -510,7 +484,6 @@ void readROM_GB() {
 // Calculate checksum
 uint16_t calc_checksum_GB (char* fileName, char* folder) {
   uint16_t calcChecksum = 0;
-  //  int calcFilesize = 0; // unused
   unsigned long i = 0;
   int c = 0;
   FIL tfile;
@@ -519,9 +492,7 @@ uint16_t calc_checksum_GB (char* fileName, char* folder) {
     f_chdir(folder);
 
   // If file exists
-  //printf("\r\nChecksum for file : %s",fileName);
   if (f_open(&tfile,fileName, FA_READ) == FR_OK) {
-    //calcFilesize = myFile.fileSize() * 8 / 1024 / 1024; // unused
     for (i = 0; i < (f_size(&tfile) / 512); i++) {
       UINT rdt = 0;
       f_read(&tfile,sdBuffer, 512,&rdt);
@@ -550,15 +521,11 @@ uint16_t calc_checksum_GB (char* fileName, char* folder) {
 }
 
 // Compare checksum
-boolean compare_checksum_GB() {
+bool compare_checksum_GB() {
   OledShowString(0,3,"Calculating Checksum",8);
 
   strcpy(fileName, romName);
   strcat(fileName, ".GB");
-
-  // last used rom folder
-  foldern = load_dword();
-  sprintf(folder, "GB/ROM/%s/%d", romName, foldern - 1);
 
   char calcsumStr[5];
   sprintf(calcsumStr, "%04X", calc_checksum_GB(fileName, folder));
@@ -584,26 +551,8 @@ boolean compare_checksum_GB() {
 void readSRAM_GB() {
   // Does cartridge have RAM
   if (lastByte > 0) {
-
-    // Get name, add extension and convert to char array for sd lib
-    strcpy(fileName, romName);
-    strcat(fileName, ".sav");
-
-    // create a new folder for the save file
-    foldern = load_dword();
-    sprintf(folder, "GB/SAVE/%s/%d", romName, foldern);
-    my_mkdir(folder);
-    f_chdir(folder);
-
-    // write new folder number back to eeprom
-    foldern = foldern + 1;
-    save_dword(foldern);
-
-    //open file on sd card
     FIL tfile;
-    if (f_open(&tfile, fileName, FA_CREATE_ALWAYS|FA_WRITE) != FR_OK) {
-      print_Error("SD Error", true);
-    }
+    FRESULT rst = createStoreDirectory(&tfile, romName, ".sav", "GB", "SAVE");
 
     // MBC2 Fix
     readByte_GB(0x0134);
@@ -620,7 +569,7 @@ void readSRAM_GB() {
       writeByte_GB(0x4000, currBank);
 
       // Read SRAM
-      for (word sramAddress = 0xA000; sramAddress <= lastByte; sramAddress += 64) {
+      for (halfword sramAddress = 0xA000; sramAddress <= lastByte; sramAddress += 64) {
         for (byte i = 0; i < 64; i++) {
           sdBuffer[i] = readByteSRAM_GB(sramAddress + i);
         }
@@ -637,8 +586,6 @@ void readSRAM_GB() {
 
     // Signal end of process
     OledShowString(0,0,"Saved to ",8);
-    OledShowString(4,1,folder,8);
-    //printf("/"));
   }
   else {
     print_Error("Cart has no SRAM", false);
@@ -646,7 +593,8 @@ void readSRAM_GB() {
 }
 
 // Write RAM
-void writeSRAM_GB() {
+uint32_t writeSRAM_GB() {
+  uint32_t numBytesWritten = 0;
   // Does cartridge have SRAM
   if (lastByte > 0) {
     // Create filepath
@@ -665,17 +613,22 @@ void writeSRAM_GB() {
 
       // Initialise MBC
       writeByte_GB(0x0000, 0x0A);
+      UINT rdt = 1;
 
       // Switch RAM banks
-      for (byte currBank = 0; currBank < sramBanks; currBank++) {
+      for (byte currBank = 0; (currBank < sramBanks && rdt == 1); currBank++) {
         writeByte_GB(0x4000, currBank);
-
+        
         // Write RAM
-        for (word sramAddress = 0xA000; sramAddress <= lastByte; sramAddress++) {
+        for (halfword sramAddress = 0xA000; sramAddress <= lastByte; sramAddress++) {
           byte bdata;
-          UINT rdt = 0;
+          
           f_read(&tfile,&bdata,1,&rdt);
+          if (rdt < 1)
+            break;
+          
           writeByteSRAM_GB(sramAddress, bdata);
+          numBytesWritten++;
         }
       }
       // Disable SRAM
@@ -685,19 +638,22 @@ void writeSRAM_GB() {
       f_close(&tfile);
       OledClear();
       OledShowString(0,2,"SRAM writing finished",8);
-
+      return numBytesWritten;
     }
     else {
+      return 0;
       print_Error("File doesnt exist", false);
     }
   }
   else {
+    return 0;
     print_Error("Cart has no SRAM", false);
   }
 }
 
 // Check if the SRAM was written without any error
-unsigned long verifySRAM_GB() {
+unsigned long verifySRAM_GB(uint32_t writtenBytes) {
+  uint32_t verifiedBytes = 0;
 
   //open file on sd card
   FIL tfile;
@@ -719,18 +675,18 @@ unsigned long verifySRAM_GB() {
       writeByte_GB(0x0000, 0x0A);
 
       // Switch SRAM banks
-      for (byte currBank = 0; currBank < sramBanks; currBank++) {
+      for (byte currBank = 0; (currBank < sramBanks && verifiedBytes < writtenBytes); currBank++) {
         writeByte_GB(0x4000, currBank);
-
+        UINT rdt;
         // Read SRAM
-        for (word sramAddress = 0xA000; sramAddress <= lastByte; sramAddress += 64) {
+        for (halfword sramAddress = 0xA000; (sramAddress <= lastByte && verifiedBytes < writtenBytes); sramAddress += 64) {
           //fill sdBuffer
-          UINT rdt;
           f_read(&tfile, sdBuffer, 64, &rdt);
-          for (int c = 0; c < 64; c++) {
+          for (int c = 0; (c < 64 && verifiedBytes < writtenBytes); c++) {
             if (readByteSRAM_GB(sramAddress + c) != sdBuffer[c]) {
               writeErrors++;
             }
+            verifiedBytes++;
           }
         }
       }
@@ -750,7 +706,7 @@ unsigned long verifySRAM_GB() {
 }
 
 //检测sram
-void TestSramGB(byte bankCnt , word wTestSize)
+void TestSramGB(byte bankCnt , halfword wTestSize)
 {
 
   OledClear();
@@ -773,7 +729,7 @@ void TestSramGB(byte bankCnt , word wTestSize)
 
     LED_GREEN_BLINK;
     // Write RAM
-    for (word sramAddress = 0xA000; sramAddress <= wTestSize; sramAddress++) {
+    for (halfword sramAddress = 0xA000; sramAddress <= wTestSize; sramAddress++) {
       byte bdata = sramAddress & 0xFF;
       writeByteSRAM_GB(sramAddress, bdata);      
     }
@@ -801,7 +757,7 @@ void TestSramGB(byte bankCnt , word wTestSize)
 
     LED_RED_BLINK;
     // Read SRAM
-    for (word sramAddress = 0xA000; sramAddress <= wTestSize; sramAddress++) {
+    for (halfword sramAddress = 0xA000; sramAddress <= wTestSize; sramAddress++) {
         byte bdata = sramAddress & 0xFF;
         if (readByteSRAM_GB(sramAddress) != bdata) {
           wErrors++;
@@ -830,7 +786,7 @@ void TestSramGB(byte bankCnt , word wTestSize)
 // Write 29F032 flashrom
 // A0-A13 directly connected to cart edge -> 16384(0x0-0x3FFF) bytes per bank -> 256(0x0-0xFF) banks
 // A14-A21 connected to MBC5
-void writeFlash29F_GB(byte MBC, boolean flashErase) {
+void writeFlash29F_GB(byte MBC, bool flashErase) {
   // Launch filebrowser
   filePath[0] = '\0';
   f_chdir("/");
@@ -964,8 +920,8 @@ void writeFlash29F_GB(byte MBC, boolean flashErase) {
     if (MBC == 3) {
       OledShowString(0,5,"Writing flash MBC3",8);
 
-      word currAddr = 0;
-      word endAddr = 0x3FFF;
+      halfword currAddr = 0;
+      halfword endAddr = 0x3FFF;
 
       //Initialize progress bar
       uint32_t processedProgressBar = 0;
@@ -1075,10 +1031,10 @@ void writeFlash29F_GB(byte MBC, boolean flashErase) {
     //unsigned int addr = 0;  // unused
     writeErrors = 0;
     // Verify flashrom
-    word romAddress = 0;
+    halfword romAddress = 0;
 
     // Read number of banks and switch banks
-    for (word bank = 1; bank < romBanks; bank++) {
+    for (halfword bank = 1; bank < romBanks; bank++) {
       if (romType >= 5) { // MBC2 and above
         setROMBank(bank); // Set ROM bank
       }
@@ -1169,7 +1125,7 @@ void writeByteCompensated(int address, byte data) {
   writeByte_GB(address >> (flashX16Mode ? 1 : 0), td);
 }
 
-void startCFIMode(boolean x16Mode) {
+void startCFIMode(bool x16Mode) {
   if (x16Mode) {
     writeByte_GB(0x555, 0xf0); //x16 mode reset command
     delay(500000);
@@ -1401,8 +1357,8 @@ void writeCFI_GB(FIL* tf, UINT* rdt) {
 
   delay(100000);
 
-  word currAddr = 0;
-  word endAddr = 0x3FFF;
+  halfword currAddr = 0;
+  halfword endAddr = 0x3FFF;
 
   for (int currBank = 0; currBank < romBanks; currBank++) 
   {
@@ -1493,10 +1449,10 @@ void verifyCFI_GB(FIL* tf, UINT* rdt, uint32_t use_tick) {
   writeErrors = 0;
 
   // Verify flashrom
-  word romAddress = 0;
+  halfword romAddress = 0;
 
   // Read number of banks and switch banks
-  for (word bank = 1; bank < romBanks; bank++) 
+  for (halfword bank = 1; bank < romBanks; bank++) 
   {
 
     if (romType >= 5) { // MBC2 and above
@@ -1704,8 +1660,8 @@ void testCFI_GB(uint16_t testBanks) {
 
 
 
-  word currAddr = 0;
-  word endAddr = 0x3FFF;
+  halfword currAddr = 0;
+  halfword endAddr = 0x3FFF;
 
   for (int currBank = 0; currBank < testBanks; currBank++) 
   {
@@ -1793,9 +1749,9 @@ void testCFI_GB(uint16_t testBanks) {
   OledShowString(0,5,"Verifying...",8);
   uint32_t wErrors = 0;
   // Verify flashrom
-  word romAddress = 0;
+  halfword romAddress = 0;
   // Read number of banks and switch banks
-  for (word bank = 1; bank < testBanks; bank++) 
+  for (halfword bank = 1; bank < testBanks; bank++) 
   {
       if (romType >= 5) { // MBC2 and above
         setROMBank(bank); // Set ROM bank
@@ -1839,7 +1795,7 @@ void testCFI_GB(uint16_t testBanks) {
   }
 }
 
-void TestMemGB(boolean bFast){
+void TestMemGB(bool bFast){
   //
   setup_GB();
   identifyCFI_GB();
@@ -1857,20 +1813,19 @@ void TestMemGB(boolean bFast){
 
 // GB Flash items
 static const char GBFlashItem1[] = "Flash Cart";
-static const char GBFlashItem2[] = "Flash Cart and Save";
-static const char GBFlashItem3[] = "29F Cart (MBC3)";
-static const char GBFlashItem4[] = "29F Cart (MBC5)";
-static const char GBFlashItem5[] = "29F Cart (CAM)";
+static const char GBFlashItem2[] = "29F Cart (MBC3)";
+static const char GBFlashItem3[] = "29F Cart (MBC5)";
+static const char GBFlashItem4[] = "29F Cart (CAM)";
 
 //static const char GBFlashItem6[] = "GB Smart";
 static const char GBFlashItem7[] = "Reset";
-static const char* const menuOptionsGBFlash[] = {GBFlashItem1, GBFlashItem2, GBFlashItem3, GBFlashItem4, GBFlashItem5, GBFlashItem7};
+static const char* const menuOptionsGBFlash[] = {GBFlashItem1, GBFlashItem2, GBFlashItem3, GBFlashItem4, GBFlashItem7};
 
 uint8_t gbFlashMenu()
 {
   uint8_t bret = 0;
 
-  unsigned char gbFlash = questionBox_OLED("Select type:", menuOptionsGBFlash, 6, 1, 1, 1);
+  uint8_t gbFlash = questionBox_OLED("Select type:", menuOptionsGBFlash, 5, 1, 1, 1);
   OledClear();
   // wait for user choice to come back from the question box menu
   switch (gbFlash)
@@ -1892,92 +1847,17 @@ uint8_t gbFlashMenu()
       }
       break;
 
-    case 2:
-      // Flash CFI and Save
-      fileBrowser("/","Select file:");
-      OledClear();
-      identifyCFI_GB();
-      if (!writeFlashCFI_GB()) {
-        //
-        print_Error("Flashing failed!\n Time out!",true);
-      }
-      getCartInfo_GB();
-      // Does cartridge have SRAM
-      if (lastByte > 0) 
-      {
-        //
-        OledClear();
-        OledShowString(0,0,"Save Sram Data:",8);
-        //Get the save file name
-        char * cpos = strrchr(filePath,'/');
-        if(cpos){cpos++;strcpy(fileName,cpos);}
-        else strcpy(fileName,filePath);
-        //Remove file ext name
-        int pos = -1;
-        while (fileName[++pos] != '\0') {
-          if (fileName[pos] == '.') {
-            fileName[pos] = '\0';
-            break;
-          }
-        }
-
-        sprintf(filePath, "/GB/SAVE/%s/", fileName);
-        bool saveFound = false;
-        FILINFO tfinfo;
-        if (f_stat(filePath,&tfinfo) == FR_OK) 
-        {
-          foldern = load_dword();
-          for (int i = foldern; i >= 0; i--) 
-          {
-            sprintf(filePath, "/GB/SAVE/%s/%d/%s.SAV", fileName, i, fileName);
-            if (f_stat(filePath,&tfinfo) == FR_OK) 
-            {
-              //
-              char tmsg[64] = {0};
-              sprintf(tmsg,"Save number %d found.",i);
-              OledShowString(0,1,tmsg,8);
-              saveFound = true;
-
-              writeSRAM_GB();
-
-              unsigned long wrErrors = verifySRAM_GB();
-              if (wrErrors == 0) 
-              {
-                OledShowString(0,2,"Verified OK",8);
-              }
-              else 
-              {
-                sprintf(tmsg,"Error: %d bytes.",wrErrors);
-                OledShowString(0,2,tmsg,8);
-                print_Error("Did not verify...", false);
-              }
-              break;
-            }
-          }
-        }
-        
-        if (!saveFound) 
-        {
-          OledShowString(0,1,"Error: No save found.",8);
-        }
-      }
-      else 
-      {
-        print_Error("Cart has no Sram", false);
-      }
-      break;
-
-   case 3:
+   case 2:
       //Flash MBC3
       writeFlash29F_GB(3, 1);
       // Reset
       break;
 
-   case 4:
+   case 3:
       //Flash MBC5
       writeFlash29F_GB(5, 1);
       break;
-   case 5:
+   case 4:
       //Flash GB Camera
       //MBC3
       writeFlash29F_GB(3, 1);
@@ -2007,7 +1887,7 @@ uint8_t gbFlashMenu()
       mode = mode_GB_GBSmart;
       break;*/
 
-    case 6:
+    case 5:
       ResetSystem();
       break;
   }
@@ -2049,7 +1929,7 @@ uint8_t gbMenu()
   uint8_t bret = 0;
   
   // create menu with title and 3 options to choose from
-  unsigned char gbMenu = questionBox_OLED("GB Cart Reader", menuOptionsGB, 6, 1, 1, 1);
+  uint8_t gbMenu = questionBox_OLED("GB Cart Reader", menuOptionsGB, 6, 1, 1, 1);
 
   // wait for user choice to come back from the question box menu
   switch (gbMenu)
@@ -2063,8 +1943,7 @@ uint8_t gbMenu()
       break;
     case 2:
       OledClear();
-      // Change working dir to root
-      //f_chdir("/");
+
       readROM_GB();
       compare_checksum_GB();
       break;
@@ -2073,7 +1952,6 @@ uint8_t gbMenu()
       OledClear();
       // Does cartridge have SRAM
       if (lastByte > 0) {
-      // Change working dir to root
         f_chdir("/");
         readSRAM_GB();
       }
@@ -2087,14 +1965,12 @@ uint8_t gbMenu()
       // Does cartridge have SRAM
       if (lastByte > 0) 
       {
-        // Change working dir to root
         f_chdir("/");
         filePath[0] = '\0';
         fileBrowser("/","Select sav file");
-        writeSRAM_GB();
         OledClear();
         unsigned long wrErrors;
-        wrErrors = verifySRAM_GB();
+        wrErrors = verifySRAM_GB(writeSRAM_GB());
         if (wrErrors == 0) 
         {
           OledShowString(0,2,"Verified OK",8);
