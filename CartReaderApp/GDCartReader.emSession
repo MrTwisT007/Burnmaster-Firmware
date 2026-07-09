@@ -1,13 +1,13 @@
 <!DOCTYPE CrossStudio_Session_File>
 <session>
  <Bookmarks>
+  <BookmarkItem objectName="" line="2283" column="0" path="D:/Software/Segger Embedded Studio/burnmaster_src/CartReaderApp/GBA.c" number="4" extra="void writeSpansion_GBA(FIL * ptf)" color="5"/>
   <BookmarkItem objectName="" line="40" column="0" path="D:/Software/Segger Embedded Studio/burnmaster_src/CartReaderApp/GB.c" number="2" extra="byte readByte_GB(word myAddress) {" color="5"/>
   <BookmarkItem objectName="" line="484" column="0" path="D:/Software/Segger Embedded Studio/burnmaster_src/CartReaderApp/GB.c" number="1" extra="uint16_t calc_checksum_GB (char* fileName, char* folder) {" color="5"/>
-  <BookmarkItem objectName="" line="526" column="0" path="D:/Software/Segger Embedded Studio/burnmaster_src/CartReaderApp/GB.c" number="3" extra="boolean compare_checksum_GB() {" color="5"/>
-  <BookmarkItem objectName="" line="661" column="0" path="D:/Software/Segger Embedded Studio/burnmaster_src/CartReaderApp/GB.c" number="1" extra="unsigned long verifySRAM_GB() {" color="5"/>
-  <BookmarkItem objectName="" line="1756" column="0" path="D:/Software/Segger Embedded Studio/burnmaster_src/CartReaderApp/GB.c" number="7" extra="uint32_t wErrors = 0;" color="5"/>
-  <BookmarkItem objectName="" line="2031" column="0" path="D:/Software/Segger Embedded Studio/burnmaster_src/CartReaderApp/GBA.c" number="5" extra="void sectorEraseSpansion_GBA(unsigned long lastSector)" color="5"/>
-  <BookmarkItem objectName="" line="2357" column="0" path="D:/Software/Segger Embedded Studio/burnmaster_src/CartReaderApp/GBA.c" number="4" extra="void writeSpansion_GBA(FIL * ptf)" color="5"/>
+  <BookmarkItem objectName="" line="523" column="0" path="D:/Software/Segger Embedded Studio/burnmaster_src/CartReaderApp/GB.c" number="3" extra="boolean compare_checksum_GB() {" color="5"/>
+  <BookmarkItem objectName="" line="654" column="0" path="D:/Software/Segger Embedded Studio/burnmaster_src/CartReaderApp/GB.c" number="1" extra="unsigned long verifySRAM_GB() {" color="5"/>
+  <BookmarkItem objectName="" line="1749" column="0" path="D:/Software/Segger Embedded Studio/burnmaster_src/CartReaderApp/GB.c" number="7" extra="uint32_t wErrors = 0;" color="5"/>
+  <BookmarkItem objectName="" line="1957" column="0" path="D:/Software/Segger Embedded Studio/burnmaster_src/CartReaderApp/GBA.c" number="5" extra="void sectorEraseSpansion_GBA(unsigned long lastSector)" color="5"/>
  </Bookmarks>
  <Breakpoints groups="Breakpoints" active_group="Breakpoints">
   <BreakpointListItem trigger="" line="245" counter="0" hardwareBreakpoint="" isFunctionBreakpoint="false" action="" expression="" group="Breakpoints" type="Breakpoint" state="2" filename="GB.c" useHWbreakpoint="false"/>
@@ -58,7 +58,7 @@
  </TraceWindow>
  <Watch1>
   <Watches active="1" update="Never">
-   <Watchpoint expression="sdBuffer" name="sdBuffer" radix="-1" linenumber="5459" filename="GBA.c"/>
+   <Watchpoint expression="sdBuffer" name="sdBuffer" radix="-1" linenumber="5380" filename="GBA.c"/>
   </Watches>
  </Watch1>
  <Watch2>
@@ -71,40 +71,40 @@
   <Watches active="0" update="Never"/>
  </Watch4>
  <Files>
-  <SessionOpenFile windowGroup="DockEditLeft" x="8" y="147" useTextEdit="1" path="main.c" left="0" top="317" codecName="Default"/>
+  <SessionOpenFile windowGroup="DockEditLeft" x="9" y="237" useTextEdit="1" path="main.c" left="0" top="186" codecName="Default"/>
   <SessionOpenFile windowGroup="DockEditLeft" x="0" y="0" useTextEdit="1" path="main.h" left="0" top="0" codecName="Default"/>
-  <SessionOpenFile windowGroup="DockEditLeft" x="13" y="0" useTextEdit="1" openedFrom="D:/Software/Segger Embedded Studio/burnmaster_src/CartReaderApp/GB.c" path="GB.h" left="0" top="0" codecName="Default"/>
-  <SessionOpenFile windowGroup="DockEditLeft" x="33" y="437" useTextEdit="1" openedFrom="D:/Software/Segger Embedded Studio/burnmaster_src/CartReaderApp/main.c" path="GB.c" left="0" selected="1" top="425" codecName="Default"/>
-  <SessionOpenFile windowGroup="DockEditLeft" x="19" y="1340" useTextEdit="1" path="GBA.c" left="0" top="1331" codecName="Default"/>
-  <SessionOpenFile windowGroup="DockEditLeft" x="0" y="19" useTextEdit="1" openedFrom="D:/Software/Segger Embedded Studio/burnmaster_src/CartReaderApp/GBA.c" path="GBA.h" left="0" top="0" codecName="Default"/>
-  <SessionOpenFile windowGroup="DockEditLeft" x="61" y="103" useTextEdit="1" openedFrom="D:/Software/Segger Embedded Studio/burnmaster_src/CartReaderApp/GB.c" path="Common.c" left="0" top="90" codecName="Default"/>
-  <SessionOpenFile windowGroup="DockEditLeft" x="8" y="70" useTextEdit="1" openedFrom="D:/Software/Segger Embedded Studio/burnmaster_src/CartReaderApp/GB.c" path="Common.h" left="0" top="20" codecName="Default"/>
+  <SessionOpenFile windowGroup="DockEditLeft" x="11" y="15" useTextEdit="1" openedFrom="D:/Software/Segger Embedded Studio/burnmaster_src/CartReaderApp/GB.c" path="GB.h" left="0" top="0" codecName="Default"/>
+  <SessionOpenFile windowGroup="DockEditLeft" x="24" y="788" useTextEdit="1" openedFrom="D:/Software/Segger Embedded Studio/burnmaster_src/CartReaderApp/main.c" path="GB.c" left="0" top="760" codecName="Default"/>
+  <SessionOpenFile windowGroup="DockEditLeft" x="15" y="3360" useTextEdit="1" path="GBA.c" left="0" top="3308" codecName="Default"/>
+  <SessionOpenFile windowGroup="DockEditLeft" x="44" y="18" useTextEdit="1" openedFrom="D:/Software/Segger Embedded Studio/burnmaster_src/CartReaderApp/GBA.c" path="GBA.h" left="0" top="2" codecName="Default"/>
+  <SessionOpenFile windowGroup="DockEditLeft" x="13" y="106" useTextEdit="1" openedFrom="D:/Software/Segger Embedded Studio/burnmaster_src/CartReaderApp/GB.c" path="Common.c" left="0" top="0" codecName="Default"/>
+  <SessionOpenFile windowGroup="DockEditLeft" x="8" y="11" useTextEdit="1" openedFrom="D:/Software/Segger Embedded Studio/burnmaster_src/CartReaderApp/GB.c" path="Common.h" left="0" top="0" codecName="Default"/>
   <SessionOpenFile windowGroup="DockEditLeft" x="5" y="256" useTextEdit="1" openedFrom="D:/Software/Segger Embedded Studio/burnmaster_src/CartReaderApp/GB.c" path="GD32F10x/Device/Source/gd32f10x_gpio.c" left="0" top="187" codecName="Default"/>
-  <SessionOpenFile windowGroup="DockEditLeft" x="42" y="696" useTextEdit="1" openedFrom="D:/Software/Segger Embedded Studio/burnmaster_src/CartReaderApp/GB.c" path="Operate.c" left="0" top="651" codecName="Default"/>
-  <SessionOpenFile windowGroup="DockEditLeft" x="11" y="34" useTextEdit="1" openedFrom="E:/work/GZcartreader/new/GDCartReader/Operate.c" path="Operate.h" left="0" top="12" codecName="Default"/>
+  <SessionOpenFile windowGroup="DockEditLeft" x="1" y="702" useTextEdit="1" openedFrom="D:/Software/Segger Embedded Studio/burnmaster_src/CartReaderApp/Operate.h" path="Operate.c" left="0" top="0" codecName="Default"/>
+  <SessionOpenFile windowGroup="DockEditLeft" x="2" y="2" useTextEdit="1" openedFrom="E:/work/GZcartreader/new/GDCartReader/Operate.c" path="Operate.h" left="0" top="0" codecName="Default"/>
   <SessionOpenFile windowGroup="DockEditLeft" x="8" y="106" useTextEdit="1" openedFrom="D:/Software/Segger Embedded Studio/burnmaster_src/CartReaderApp/fatfs/sdcard.h" path="GD32F10x/Device/Include/gd32f10x.h" left="0" top="90" codecName="Default"/>
   <SessionOpenFile windowGroup="DockEditLeft" x="68" y="58" useTextEdit="1" openedFrom="D:/Software/Segger Embedded Studio/burnmaster_src/CartReaderApp/Common.c" path="GD32F10x/Device/Source/system_gd32f10x.c" left="0" top="47" codecName="Default"/>
-  <SessionOpenFile windowGroup="DockEditLeft" x="14" y="715" useTextEdit="1" openedFrom="D:/Software/Segger Embedded Studio/burnmaster_src/CartReaderApp/main.c" path="Display.c" left="0" top="696" codecName="Default"/>
+  <SessionOpenFile windowGroup="DockEditLeft" x="13" y="820" useTextEdit="1" openedFrom="D:/Software/Segger Embedded Studio/burnmaster_src/CartReaderApp/GBA.c" path="Display.c" left="0" top="807" codecName="Default"/>
   <SessionOpenFile windowGroup="DockEditLeft" x="49" y="32" useTextEdit="1" openedFrom="D:/Software/Segger Embedded Studio/burnmaster_src/CartReaderApp/Display.c" path="Display.h" left="0" top="4" codecName="Default"/>
   <SessionOpenFile windowGroup="DockEditLeft" x="40" y="279" useTextEdit="1" openedFrom="E:/work/GZcartreader/new/GDCartReader/main.c" path="fatfs/sdcard.c" left="0" top="253" codecName="Default"/>
   <SessionOpenFile windowGroup="DockEditLeft" x="14" y="41" useTextEdit="1" openedFrom="E:/work/GZcartreader/new/GDCartReader/fatfs/diskio.c" path="fatfs/sdcard.h" left="0" top="26" codecName="Default"/>
   <SessionOpenFile windowGroup="DockEditLeft" x="0" y="4530" useTextEdit="1" openedFrom="D:/Software/Segger Embedded Studio/burnmaster_src/CartReaderApp/Operate.c" path="fatfs/ff.c" left="0" top="4502" codecName="Default"/>
   <SessionOpenFile windowGroup="DockEditLeft" x="21" y="48" useTextEdit="1" openedFrom="D:/Software/Segger Embedded Studio/burnmaster_src/CartReaderApp/GB.c" path="fatfs/ff.h" left="0" top="20" codecName="Default"/>
   <SessionOpenFile windowGroup="DockEditLeft" x="26" y="623" useTextEdit="1" openedFrom="D:/Software/Segger Embedded Studio/burnmaster_src/CartReaderApp/Common.c" path="CMSIS_5/CMSIS/Core/Include/cmsis_gcc.h" left="0" top="588" codecName="Default"/>
-  <SessionOpenFile windowGroup="DockEditLeft" x="43" y="525" useTextEdit="1" path="GBM.c" left="0" top="470" codecName="Default"/>
+  <SessionOpenFile windowGroup="DockEditLeft" x="9" y="792" useTextEdit="1" path="GBM.c" left="0" top="741" codecName="Default"/>
   <SessionOpenFile windowGroup="DockEditLeft" x="36" y="58" useTextEdit="1" openedFrom="D:/Software/Segger Embedded Studio/burnmaster_src/CartReaderApp/GBA.c" path="GD32F10x/Device/Include/gd32f10x_gpio.h" left="0" top="58" codecName="Default"/>
   <SessionOpenFile windowGroup="DockEditLeft" x="29" y="9" useTextEdit="1" path="GBM.h" left="0" top="0" codecName="Default"/>
   <SessionOpenFile windowGroup="DockEditLeft" x="9" y="210" useTextEdit="1" path="GD32F10x/Source/GD32F10x_Startup.s" left="0" top="167" codecName="Default"/>
   <SessionOpenFile windowGroup="DockEditLeft" x="16" y="784" useTextEdit="1" openedFrom="D:/Software/Segger Embedded Studio/burnmaster_src/CartReaderApp/main.c" path="GD32F10x/Device/Source/gd32f10x_rcu.c" left="0" top="734" codecName="Default"/>
   <SessionOpenFile windowGroup="DockEditLeft" x="0" y="0" useTextEdit="1" path="SEGGER_THUMB_Startup.s" left="0" top="168" codecName="Default"/>
   <SessionOpenFile windowGroup="DockEditLeft" x="20" y="185" useTextEdit="1" path="GD32F10x/Source/gd32f10x_hd_Vectors.s" left="0" top="135" codecName="Default"/>
-  <SessionOpenFile windowGroup="DockEditLeft" x="76" y="35" useTextEdit="1" openedFrom="D:/Software/Segger Embedded Studio/burnmaster_src/CartReaderApp/main.c" path="flashparam.c" left="0" top="0" codecName="Default"/>
+  <SessionOpenFile windowGroup="DockEditLeft" x="41" y="12" useTextEdit="1" openedFrom="D:/Software/Segger Embedded Studio/burnmaster_src/CartReaderApp/Common.c" path="flashparam.c" left="0" selected="1" top="0" codecName="Default"/>
   <SessionOpenFile windowGroup="DockEditLeft" x="28" y="12" useTextEdit="1" openedFrom="D:/Software/Segger Embedded Studio/burnmaster_src/CartReaderApp/flashparam.c" path="flashparam.h" left="0" top="0" codecName="Default"/>
   <SessionOpenFile windowGroup="DockEditLeft" x="35" y="297" useTextEdit="1" openedFrom="D:/Software/Segger Embedded Studio/burnmaster_src/CartReaderApp/GD32F10x/Device/Source/gd32f10x_fmc.c" path="GD32F10x/Device/Include/gd32f10x_fmc.h" left="0" top="262" codecName="Default"/>
-  <SessionOpenFile windowGroup="DockEditLeft" x="15" y="322" useTextEdit="1" openedFrom="D:/Software/Segger Embedded Studio/burnmaster_src/CartReaderApp/flashparam.c" folds0="49,224,272,297,428,447,460,515,574,629,663,690,702,713,725,748,764,785,807,825,862,873,898,948" path="GD32F10x/Device/Source/gd32f10x_fmc.c" left="0" top="207" codecName="Default"/>
+  <SessionOpenFile windowGroup="DockEditLeft" x="15" y="322" useTextEdit="1" openedFrom="D:/Software/Segger Embedded Studio/burnmaster_src/CartReaderApp/flashparam.c" folds0="49,224,272,297,428,447,460,515,574,629,663,690,702,713,725,748,764,785,807,825,862,873,898,948" path="GD32F10x/Device/Source/gd32f10x_fmc.c" left="0" top="253" codecName="Default"/>
   <SessionOpenFile windowGroup="DockEditLeft" x="39" y="79" useTextEdit="1" path="GD32F10x_Flash.icf" left="0" top="64" codecName="Default"/>
-  <SessionOpenFile windowGroup="DockEditLeft" x="29" y="43" useTextEdit="1" path="../../include/stdlib.h" left="0" top="0" codecName="Default"/>
-  <SessionOpenFile windowGroup="DockEditLeft" x="21" y="212" useTextEdit="1" openedFrom="D:/Software/Segger Embedded Studio/burnmaster_src/CartReaderApp/Common.h" path="../../include/stdint.h" left="0" top="184" codecName="Default"/>
+  <SessionOpenFile windowGroup="DockEditLeft" x="29" y="43" useTextEdit="1" path="../../include/stdlib.h" left="0" top="18" codecName="Default"/>
+  <SessionOpenFile windowGroup="DockEditLeft" x="21" y="213" useTextEdit="1" openedFrom="D:/Software/Segger Embedded Studio/burnmaster_src/CartReaderApp/Common.h" path="../../include/stdint.h" left="0" top="0" codecName="Default"/>
  </Files>
  <EMStudioWindow activeProject="update" fileDialogDefaultFilter="*" autoConnectTarget="J-Link" buildConfiguration="Release" sessionSettings="" debugSearchFileMap="E:/work/??cartreader/new/GDCartReader/SEGGER_THUMB_Startup.s&#xa;" fileDialogInitialDirectory="E:/work/GZcartreader/new/GDCartReader/GD32F10x/Device/Source" debugSearchPath="" autoConnectCapabilities="3199"/>
 </session>

@@ -51,9 +51,9 @@ Memory use by input file:
   ---------------------------------------------  ----------  ----------  ----------  ----------
   Subtotal (2 archives)                               6 768         277          12       1 220
   ---------------------------------------------  ----------  ----------  ----------  ----------
-  Linker created (shared data, fills, blocks):                    1 901                   3 000
+  Linker created (shared data, fills, blocks):                    1 886                   3 000
   =============================================  ==========  ==========  ==========  ==========
-  Total:                                             58 684       8 985       2 476      20 147
+  Total:                                             58 684       8 970       2 476      20 147
   =============================================  ==========  ==========  ==========  ==========
 
 Memory use by archive member:
@@ -79,24 +79,24 @@ Memory use by archive member:
   ---------------------------------------------  ----------  ----------  ----------  ----------
   Subtotal (12 members from 2 archives)               6 768         277          12       1 220
   Objects (23 files)                                 51 916       6 807       2 464      15 927
-  Linker created (shared data, fills, blocks):                    1 901                   3 000
+  Linker created (shared data, fills, blocks):                    1 886                   3 000
   =============================================  ==========  ==========  ==========  ==========
-  Total:                                             58 684       8 985       2 476      20 147
+  Total:                                             58 684       8 970       2 476      20 147
   =============================================  ==========  ==========  ==========  ==========
 
 Memory use by linker:
 
   Description                                       RX Code     RO Data     RW Data     ZI Data
   ---------------------------------------------  ----------  ----------  ----------  ----------
-  Initialization table                                            1 901                        
+  Initialization table                                            1 886                        
   Memory for block 'stack'                                                                3 000
   ---------------------------------------------  ----------  ----------  ----------  ----------
-  Subtotal (linker created):                                      1 901                   3 000
+  Subtotal (linker created):                                      1 886                   3 000
   ---------------------------------------------  ----------  ----------  ----------  ----------
   Objects (23 files)                                 51 916       6 807       2 464      15 927
   Archives (2 files)                                  6 768         277          12       1 220
   =============================================  ==========  ==========  ==========  ==========
-  Total:                                             58 684       8 985       2 476      20 147
+  Total:                                             58 684       8 970       2 476      20 147
   =============================================  ==========  ==========  ==========  ==========
 
 
@@ -931,11 +931,10 @@ Sections by address:
   0801bf3c-0801bf3f  [.rodata.libc..L.str.6]             4   1  Cnst  RO  __SEGGER_RTL_vfprintf_short_float_long.o (libc_v7m_t_le_eabi_balanced.a)
   0801bf40-0801bf5f  __SEGGER_init_ctors                32   4  Code  RX  SEGGER_crtinit_v7m_little.o
   0801bf60-0801bf7f  __SEGGER_init_table__              32   4  Cnst  RO  [ Linker created ]
-  0801bf80-0801c6cc  __SEGGER_init_data__            1 869   4  Cnst  RO  [ Linker created ]
-  0801c6cd-0801c6cd  ( ALIGN .=.+1 )                     1   -  ----  -   -
-  0801c6ce-0801c717  __SEGGER_init_lzss                 74   2  Code  RX  SEGGER_crtinit_v7m_little.o
-  0801c718-0801c729  __SEGGER_init_zero                 18   2  Code  RX  SEGGER_crtinit_v7m_little.o
-  0801c72a-1fffffff  ( UNUSED .=.+402536662 )   402 536 662
+  0801bf80-0801c6bd  __SEGGER_init_data__            1 854   4  Cnst  RO  [ Linker created ]
+  0801c6be-0801c707  __SEGGER_init_lzss                 74   2  Code  RX  SEGGER_crtinit_v7m_little.o
+  0801c708-0801c719  __SEGGER_init_zero                 18   2  Code  RX  SEGGER_crtinit_v7m_little.o
+  0801c71a-1fffffff  ( UNUSED .=.+402536678 )   402 536 678
                                                              -  ----  -   -
   20000000-2000012f  _vectors_ram                      304  256
                                                                 None  RX  gd32f10x_hd_Vectors.o
@@ -1169,8 +1168,8 @@ Function symbols by name:
                              0x08017121       3 106      4  Code  Gb  __SEGGER_RTL_vfprintf_short_float_long.o (libc_v7m_t_le_eabi_balanced.a)
   __SEGGER_init_ctors        0x0801BF41          24      4  Code  Wk  SEGGER_crtinit_v7m_little.o
   __SEGGER_init_done         0x08010C73                  4  Code  Gb  SEGGER_THUMB_Startup.o
-  __SEGGER_init_lzss         0x0801C6CF          74      2  Code  Wk  SEGGER_crtinit_v7m_little.o
-  __SEGGER_init_zero         0x0801C719          18      2  Code  Wk  SEGGER_crtinit_v7m_little.o
+  __SEGGER_init_lzss         0x0801C6BF          74      2  Code  Wk  SEGGER_crtinit_v7m_little.o
+  __SEGGER_init_zero         0x0801C709          18      2  Code  Wk  SEGGER_crtinit_v7m_little.o
   __aeabi_d2f                0x080110D1          76      4  Code  Wk  floatasmops_arm.o (libc_v7m_t_le_eabi_balanced.a)
   __aeabi_f2ulz              0x0801103D          62      4  Code  Wk  floatasmops_arm.o (libc_v7m_t_le_eabi_balanced.a)
   __aeabi_fadd               0x08010CE5         272      4  Code  Wk  floatasmops_arm.o (libc_v7m_t_le_eabi_balanced.a)
@@ -1893,8 +1892,8 @@ Function symbols by address:
   0x0801AA7D  __SEGGER_RTL_putc                 144      2  Code  Gb  prinops.o (libc_v7m_t_le_eabi_balanced.a)
   0x0801AB0D  printf                             44      2  Code  Wk  prinops.o (libc_v7m_t_le_eabi_balanced.a)
   0x0801BF41  __SEGGER_init_ctors                24      4  Code  Wk  SEGGER_crtinit_v7m_little.o
-  0x0801C6CF  __SEGGER_init_lzss                 74      2  Code  Wk  SEGGER_crtinit_v7m_little.o
-  0x0801C719  __SEGGER_init_zero                 18      2  Code  Wk  SEGGER_crtinit_v7m_little.o
+  0x0801C6BF  __SEGGER_init_lzss                 74      2  Code  Wk  SEGGER_crtinit_v7m_little.o
+  0x0801C709  __SEGGER_init_zero                 18      2  Code  Wk  SEGGER_crtinit_v7m_little.o
 
 Function symbols by descending size:
 
@@ -2651,7 +2650,7 @@ Read-only data symbols by name:
   __SEGGER_RTL_hex_lc        0x0801BF28          16         Cnst  Gb  prinops.o (libc_v7m_t_le_eabi_balanced.a)
   __SEGGER_RTL_hex_uc        0x0801BF18          16         Cnst  Gb  prinops.o (libc_v7m_t_le_eabi_balanced.a)
   __SEGGER_RTL_ipow10        0x0800C130         160      8  Cnst  Gb  prinops.o (libc_v7m_t_le_eabi_balanced.a)
-  __SEGGER_init_data__       0x0801BF80     [1 869]      4  Cnst  Lc  [ Linker created ]
+  __SEGGER_init_data__       0x0801BF80     [1 854]      4  Cnst  Lc  [ Linker created ]
   __SEGGER_init_table__      0x0801BF60        [32]      4  Cnst  Lc  [ Linker created ]
   _aInitStr.0                0x08017D70          17      4  Cnst  Lc  SEGGER_RTT.o (prinops_rtt_v7m_little.a)
   ff_wtoupper.cvt1           0x080137AA         498      2  Cnst  Lc  ffunicode.o
@@ -2746,7 +2745,7 @@ Read-only data symbols by address:
   0x0801BF18  __SEGGER_RTL_hex_uc                16         Cnst  Gb  prinops.o (libc_v7m_t_le_eabi_balanced.a)
   0x0801BF28  __SEGGER_RTL_hex_lc                16         Cnst  Gb  prinops.o (libc_v7m_t_le_eabi_balanced.a)
   0x0801BF60  __SEGGER_init_table__            [32]      4  Cnst  Lc  [ Linker created ]
-  0x0801BF80  __SEGGER_init_data__          [1 869]      4  Cnst  Lc  [ Linker created ]
+  0x0801BF80  __SEGGER_init_data__          [1 854]      4  Cnst  Lc  [ Linker created ]
 
 Untyped symbols by name:
 
@@ -2756,18 +2755,18 @@ Untyped symbols by name:
   __FLASH1_segment_size__    0x00040000                     ----  Gb  [ Linker created ]
   __FLASH1_segment_start__   0x08000000                     ----  Gb  [ Linker created ]
   __FLASH1_segment_used_end__
-                             0x0801C72A                     ----  Gb  [ Linker created ]
+                             0x0801C71A                     ----  Gb  [ Linker created ]
   __FLASH1_segment_used_size__
-                             0x0001072A                     ----  Gb  [ Linker created ]
+                             0x0001071A                     ----  Gb  [ Linker created ]
   __FLASH1_segment_used_start__
                              0x0800C000                     ----  Gb  [ Linker created ]
   __FLASH_segment_end__      0x08040000                     ----  Gb  [ Linker created ]
   __FLASH_segment_size__     0x00034000                     ----  Gb  [ Linker created ]
   __FLASH_segment_start__    0x0800C000                     ----  Gb  [ Linker created ]
   __FLASH_segment_used_end__
-                             0x0801C72A                     ----  Gb  [ Linker created ]
+                             0x0801C71A                     ----  Gb  [ Linker created ]
   __FLASH_segment_used_size__
-                             0x0001072A                     ----  Gb  [ Linker created ]
+                             0x0001071A                     ----  Gb  [ Linker created ]
   __FLASH_segment_used_start__
                              0x0800C000                     ----  Gb  [ Linker created ]
   __HEAPSIZE__               0x00000000                     ----  Gb  [ Linker created ]
@@ -2812,9 +2811,9 @@ Untyped symbols by address:
   0x0000C000  __RAM1_segment_used_size__
                                                             ----  Gb  [ Linker created ]
   0x0000C000  __RAM1_segment_size__                         ----  Gb  [ Linker created ]
-  0x0001072A  __FLASH_segment_used_size__
+  0x0001071A  __FLASH_segment_used_size__
                                                             ----  Gb  [ Linker created ]
-  0x0001072A  __FLASH1_segment_used_size__
+  0x0001071A  __FLASH1_segment_used_size__
                                                             ----  Gb  [ Linker created ]
   0x00034000  __FLASH_segment_size__                        ----  Gb  [ Linker created ]
   0x00040000  __FLASH1_segment_size__                       ----  Gb  [ Linker created ]
@@ -2830,9 +2829,9 @@ Untyped symbols by address:
   0x0800C130  __vectors_end__                               ----  Gb  [ Linker created ]
   0x0801BA5C  __ctors_start__                               ----  Gb  [ Linker created ]
   0x0801BA60  __ctors_end__                                 ----  Gb  [ Linker created ]
-  0x0801C72A  __FLASH_segment_used_end__
+  0x0801C71A  __FLASH_segment_used_end__
                                                             ----  Gb  [ Linker created ]
-  0x0801C72A  __FLASH1_segment_used_end__
+  0x0801C71A  __FLASH1_segment_used_end__
                                                             ----  Gb  [ Linker created ]
   0x08040000  __FLASH_segment_end__                         ----  Gb  [ Linker created ]
   0x08040000  __FLASH1_segment_end__                        ----  Gb  [ Linker created ]
@@ -2860,14 +2859,14 @@ Untyped symbols by address:
 Memory breakdown:
 
    58 684 bytes read-only  code    + 
-    8 985 bytes read-only  data    =  67 669 bytes read-only (total)
+    8 970 bytes read-only  data    =  67 654 bytes read-only (total)
    22 623 bytes read-write data
 
 Region summary:
 
   Name        Range                     Size                 Used               Unused       Alignment Loss
   ----------  -----------------  -----------  -------------------  -------------------  -------------------
-  FLASH       0800c000-0803ffff      212 992       67 369  31.63%      145 622  68.37%            1   0.00%
+  FLASH       0800c000-0803ffff      212 992       67 354  31.62%      145 638  68.38%            0   0.00%
   RAM         20000000-2000bfff       49 152       22 927  46.65%       26 225  53.35%            0   0.00%
 
 Link complete: 0 errors, 0 warnings, 0 remarks
