@@ -97,7 +97,7 @@ void SysClockFree()
 
 void delayMicroseconds(uint16_t us)
 {
-  delay(1);
+  delay(us);
 }
 
 FRESULT createStoreDirectory(FIL* tfile, char* romName, char* extension, char* systemName, char* fileType){
